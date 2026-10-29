@@ -67,6 +67,20 @@ Every pull request runs both on GitHub Actions (`.github/workflows/playtests.yml
 
 [CodeScene](https://codescene.io/projects/87039) checks every pull request against its Code Health rules. Rule overrides live in `.codescene/code-health-rules.json`: the game code uses the defaults, and only the `tools/` scripts are relaxed. Dependabot branches are not analysed.
 
+## Merging into `main`
+
+Every change goes through a pull request. A ruleset on `main` lets a pull request merge only once these checks pass on its latest commit, and it refuses direct pushes. Nobody can bypass it, the owner included.
+
+| Check | From | What it checks |
+|---|---|---|
+| Robot playtests | GitHub Actions | both playtests |
+| CodeScene Code Health Review (main) | CodeScene | the Code Health of the changed code |
+| Socket Security: Pull Request Alerts | Socket | any package the pull request adds or changes |
+
+Socket's Project Report, which covers every package already in use, is for information only. A branch doesn't have to be up to date with `main` before it merges.
+
+If one of these services is down, merging waits. The owner can switch the ruleset off in Settings → Rules → Rulesets. CodeScene skips Dependabot branches, so let it analyse them before switching Dependabot on, or its pull requests could never merge.
+
 ## GitHub Pages
 
 The game is served straight from the repository: Settings → Pages → Deploy from a branch → `main` / root.
