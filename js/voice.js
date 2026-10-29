@@ -8,7 +8,7 @@
 
 const VO = { raw: null, buf: {}, nodes: [], endAt: 0, token: 0, route: '' };
 const MY = { local: {}, pack: {} }; // clip key -> ArrayBuffer of WAV or MP3 bytes
-fetch('voice/jenny.json').then(r => r.ok ? r.json() : null).then(j => { VO.raw = j; if (AC) decodeVoice(); }).catch(() => { VO.raw = null; });
+fetch('voice/jenny-missing.json').then(r => r.ok ? r.json() : null).then(j => { VO.raw = j; if (AC) decodeVoice(); }).catch(() => { VO.raw = null; });
 fetch('voice/my-voice.json').then(r => r.ok ? r.json() : null).then(j => {
   if (!j || !j.clips) return;
   Object.entries(j.clips).forEach(([k, b]) => { MY.pack[k] = b64ToBuf(b); });
