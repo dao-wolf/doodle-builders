@@ -1,0 +1,14 @@
+{
+  "usage": "Overrides CodeScene's default Code Health rules. The game code (index.html, css/, js/) uses the defaults. Only tools/** (one-off voice generation and test scripts) is relaxed.",
+  "rule_sets": [
+    {
+      "matching_content_path": "tools/**",
+      "rules": [
+        { "name": "Large Method", "weight": 0.5 },
+        { "name": "Complex Method", "weight": 0.5 },
+        { "name": "Code Duplication", "weight": 0 }
+      ],
+      "thresholds": []
+    }
+  ]
+}

@@ -1,5 +1,8 @@
 # Doodle Builders
 
+[![CodeScene Average Code Health](https://codescene.io/projects/87039/status-badges/average-code-health)](https://codescene.io/projects/87039)
+[![CodeScene Hotspot Code Health](https://codescene.io/projects/87039/status-badges/hotspot-code-health)](https://codescene.io/projects/87039)
+
 A learning game that grows with children: numbers, letters and phonics first (ages 2 to 5, Reception), with more subjects to come as they move up through school. The heroes are children's own doodles.
 
 The first adventure is **Bob's Outpost**.
@@ -101,6 +104,10 @@ python tools/playtest/studio_test.py           # voice studio with a pretend mic
 ```
 
 `index.html?speed=2` runs the game faster, which is handy for testing.
+
+## Code quality
+
+[CodeScene](https://codescene.io/projects/87039) checks every pull request against its Code Health rules (profile: Clean Code Collective). Rule overrides live in `.codescene/code-health-rules.json`: the game code uses the defaults, and only the `tools/` scripts are relaxed. Dependabot branches are not analysed.
 
 ## Credits and licences
 
