@@ -38,13 +38,17 @@ async def answer(page, st):
     sc = st['SC']
     if st['type'] == 'count':
         if st['items']: g = st['items'][0]; await page.mouse.click(g['x'] * sc, g['y'] * sc)
-    else:
-        right = [x for x in st['items'] if x['val'] == st['target']]
-        wrong = [x for x in st['items'] if x['val'] != st['target']]
-        if right:
-            if wrong and int(time.time()) % 5 == 0:
-                await page.mouse.click(wrong[0]['x'] * sc, (wrong[0]['y'] - 32) * sc); await page.wait_for_timeout(300)
-            await page.mouse.click(right[0]['x'] * sc, (right[0]['y'] - 32) * sc)
+        return
+    right = [x for x in st['items'] if x['val'] == st['target']]
+    if right:
+        await pick(page, right[0], [x for x in st['items'] if x['val'] != st['target']], sc)
+
+
+async def pick(page, right, wrong, sc):
+    """Taps the right block, after a wrong one about one time in five."""
+    if wrong and int(time.time()) % 5 == 0:
+        await page.mouse.click(wrong[0]['x'] * sc, (wrong[0]['y'] - 32) * sc); await page.wait_for_timeout(300)
+    await page.mouse.click(right['x'] * sc, (right['y'] - 32) * sc)
 
 
 async def check_pause_and_tap(page, st, shot, log, errors):
