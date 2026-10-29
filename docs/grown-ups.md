@@ -15,7 +15,7 @@ On the start screen, press and hold **Grown-ups**. During a game, press and hold
 | Letters shown as | lowercase, UPPERCASE, Both |
 | Numbers | 1 to 5, 1 to 10 |
 | Voice | Natural (Jenny) or Device voice, plus "Use my own recordings first" |
-| Seasonal themes | Automatic, Off |
+| Seasonal themes | Automatic, Halloween, Christmas, Off |
 | Outposts | Unlock all, or start again from outpost 1 |
 
 ## Seasonal themes
@@ -25,9 +25,18 @@ The game dresses up for the seasons, then goes back to normal:
 | Season | Shown | What changes |
 |---|---|---|
 | Halloween | 15 October to 3 November | Dusk sky with a moon, stars and friendly bats; falling leaves; pumpkins and cute ghosts; pumpkin lanterns, cobwebs and a ghost at the lighthouse window; Bob in a witch hat, Mr Henry in a cape, Nibblers in ghost sheets |
-| Christmas | 1 December to 6 January | Snow; Christmas trees, presents and snowmen in scarves; snowy roofs, wreaths and fairy lights on the outposts; Bob in a Santa hat, Mr Henry in antlers and a scarf, Nibblers in elf hats |
+| Christmas | 4 November to 6 January | Snow; Christmas trees, presents and snowmen in scarves; snowy roofs, wreaths and fairy lights on the outposts; Bob in a Santa hat, Mr Henry in antlers and a scarf, Nibblers in elf hats |
 
-While a season is on, a big picture button (a pumpkin or a Christmas tree) sits on the corner of the start screen, so children can switch the look off and back on without reading. It starts on each time a season begins. **Seasonal themes: Off** in the settings turns seasons off altogether. The outposts keep the same shapes and pieces, so the game plays the same.
+While a season is on, a big picture button (a pumpkin or a Christmas tree) sits on the corner of the start screen, so children can switch the look off and back on without reading. It starts on each time a season begins. In the settings, **Seasonal themes** chooses how the look is picked:
+
+| Option | What it does |
+|---|---|
+| Automatic | Halloween and Christmas on the dates above, the normal look the rest of the year |
+| Halloween | The Halloween look whatever the date |
+| Christmas | The Christmas look whatever the date |
+| Off | No seasonal look and no picture button |
+
+ The outposts keep the same shapes and pieces, so the game plays the same.
 
 To see a look on another day, add `?season=halloween`, `?season=christmas` or `?season=none` to the address, or pretend it is another date with `?date=2026-12-24`.
 
