@@ -33,6 +33,20 @@ STATE = '''() => ({ phase, type: round && round.type, target: round && round.tar
   finText: document.getElementById('finText').textContent, paused: isPaused() })'''
 
 
+async def answer(page, st):
+    """Taps a gem when counting, otherwise the right answer (now and then a wrong one first)."""
+    sc = st['SC']
+    if st['type'] == 'count':
+        if st['items']: g = st['items'][0]; await page.mouse.click(g['x'] * sc, g['y'] * sc)
+    else:
+        right = [x for x in st['items'] if x['val'] == st['target']]
+        wrong = [x for x in st['items'] if x['val'] != st['target']]
+        if right:
+            if wrong and int(time.time()) % 5 == 0:
+                await page.mouse.click(wrong[0]['x'] * sc, (wrong[0]['y'] - 32) * sc); await page.wait_for_timeout(300)
+            await page.mouse.click(right[0]['x'] * sc, (right[0]['y'] - 32) * sc)
+
+
 async def check_pause_and_tap(page, st, shot, log, errors):
     """Holding the gear button must pause the game, and tapping the ground ahead must walk the hero."""
     gear = await page.locator('#gearBtn').bounding_box()
@@ -91,15 +105,7 @@ async def play(browser, name, w, h, hero, diff, level, move, style):
             await page.keyboard.up('ArrowRight'); holding = False
         if st['phase'] in ('ask', 'bask'):
             await shot('ask_' + st['phase'] + '_' + (st['type'] or ''))
-            if st['type'] == 'count':
-                if st['items']: g = st['items'][0]; await page.mouse.click(g['x'] * sc, g['y'] * sc)
-            else:
-                right = [x for x in st['items'] if x['val'] == st['target']]
-                wrong = [x for x in st['items'] if x['val'] != st['target']]
-                if right:
-                    if wrong and int(time.time()) % 5 == 0:
-                        await page.mouse.click(wrong[0]['x'] * sc, (wrong[0]['y'] - 32) * sc); await page.wait_for_timeout(300)
-                    await page.mouse.click(right[0]['x'] * sc, (right[0]['y'] - 32) * sc)
+            await answer(page, st)
             await page.wait_for_timeout(350)
         elif st['phase'] == 'place' and st['box']:
             await shot('place'); b = st['box']; await page.wait_for_timeout(300); await page.mouse.click(b['cx'] * sc, b['cy'] * sc)
