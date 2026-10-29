@@ -29,7 +29,7 @@ const SEASONS = {
     },
   },
   christmas: {
-    name: 'Christmas', from: '12-01', to: '01-06',
+    name: 'Christmas', from: '11-04', to: '01-06',
     party: ['#e23b3b', '#3fae5a', '#ffd23f', '#ffffff', '#7cc8ff'],
     card: { sky: '#bcd8f4', ground: '#f6faff', lip: '#d6e4f4', prop: 'present', dots: '#ffffff', fall: true },
     lands: {
@@ -52,7 +52,7 @@ const SEASONS = {
 };
 Object.entries(SEASONS).forEach(([id, s]) => { s.id = id; });
 let SEASON = null;     // the season being shown, or null for the normal look
-let seasonOpen = null; // { id, key } of the season whose window is open (its picture button shows), or null
+let seasonOpen = null; // { id, key } of the season that is on (its picture button shows), or null
 
 // ------------------------------------------------------------------ when
 const pad2 = n => String(n).padStart(2, '0');
@@ -74,10 +74,12 @@ function today(q) {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(q.get('date') || '');
   return m ? new Date(+m[1], m[2] - 1, +m[3]) : new Date();
 }
-// The season whose window is open now. ?season=halloween|christmas|none forces one, ignoring the date and settings.
+// The season that is on now: by date when the grown-ups' setting is Automatic, or the one they picked
+// (Halloween, Christmas or Off). ?season=halloween|christmas|none forces one, ignoring the date and settings.
 function seasonWindow() {
   const q = new URLSearchParams(location.search), forced = q.get('season');
   if (forced) return SEASONS[forced] ? { id: forced, key: `${forced}-test` } : null;
+  if (SEASONS[S.seasons]) return { id: S.seasons, key: `${S.seasons}-picked` };
   return S.seasons === 'off' ? null : seasonOn(today(q));
 }
 
