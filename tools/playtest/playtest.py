@@ -33,6 +33,20 @@ STATE = '''() => ({ phase, type: round && round.type, target: round && round.tar
   finText: document.getElementById('finText').textContent, paused: isPaused() })'''
 
 
+async def check_pause_and_tap(page, st, shot, log, errors):
+    """Holding the gear button must pause the game, and tapping the ground ahead must walk the hero."""
+    gear = await page.locator('#gearBtn').bounding_box()
+    await page.mouse.move(gear['x'] + 20, gear['y'] + 20); await page.mouse.down(); await page.wait_for_timeout(900); await page.mouse.up()
+    a = await page.evaluate('hero.x'); await page.wait_for_timeout(600); b = await page.evaluate('hero.x')
+    paused = await page.evaluate('isPaused()') and a == b
+    await shot('settings_ingame'); await page.click('#setDone')
+    await page.mouse.click((st['heroX'] + 150) * st['SC'], (st['GY'] + 10) * st['SC']); await page.wait_for_timeout(500)
+    moved = await page.evaluate('hero.x') > b + 20
+    log.extend([('pause-check', 'paused' if paused else 'NOT PAUSED'), ('tap-walk', 'moved' if moved else 'DID NOT MOVE')])
+    errors.extend(p for ok, p in ((paused, 'holding the gear button did not pause the game'),
+                                  (moved, 'tapping the ground did not walk the hero')) if not ok)
+
+
 async def play(browser, name, w, h, hero, diff, level, move, style):
     page = await browser.new_page(viewport={'width': w, 'height': h}, has_touch=True)
     errors = []
@@ -42,7 +56,8 @@ async def play(browser, name, w, h, hero, diff, level, move, style):
     await page.reload(); await page.wait_for_timeout(800)
     await page.click(f'.char[data-char="{hero}"]'); await page.wait_for_timeout(400)
     await page.click(f'.lvl[data-lvl="{level}"]')
-    shots, log, seen, last, t0, holding, tested_pause = set(), [], None, None, time.time(), False, False
+    shots, log, seen, last, t0, holding = set(), [], None, None, time.time(), False
+    tested_pause = move != 'manual'  # only manual scenarios have the pause check
 
     async def shot(tag):
         if tag not in shots:
@@ -68,18 +83,7 @@ async def play(browser, name, w, h, hero, diff, level, move, style):
             if not tested_pause and st['status'][0] == 'held':  # hold the gear button: the game must pause
                 tested_pause = True
                 if holding: await page.keyboard.up('ArrowRight'); holding = False
-                gear = await page.locator('#gearBtn').bounding_box()
-                await page.mouse.move(gear['x'] + 20, gear['y'] + 20); await page.mouse.down(); await page.wait_for_timeout(900); await page.mouse.up()
-                a = await page.evaluate('hero.x'); await page.wait_for_timeout(600); b = await page.evaluate('hero.x')
-                paused = await page.evaluate('isPaused()') and a == b
-                await shot('settings_ingame'); await page.click('#setDone')
-                log.append(('pause-check', 'paused' if paused else 'NOT PAUSED'))
-                if not paused: errors.append('holding the gear button did not pause the game')
-                # tap the ground ahead once to check tap-to-walk
-                await page.mouse.click((st['heroX'] + 150) * sc, (st['GY'] + 10) * sc); await page.wait_for_timeout(500)
-                moved = await page.evaluate('hero.x') > b + 20
-                log.append(('tap-walk', 'moved' if moved else 'DID NOT MOVE'))
-                if not moved: errors.append('tapping the ground did not walk the hero')
+                await check_pause_and_tap(page, st, shot, log, errors)
             if not holding:
                 await page.keyboard.down('ArrowRight'); holding = True
             await shot('walk')
@@ -101,7 +105,7 @@ async def play(browser, name, w, h, hero, diff, level, move, style):
             await shot('place'); b = st['box']; await page.wait_for_timeout(300); await page.mouse.click(b['cx'] * sc, b['cy'] * sc)
         await page.wait_for_timeout(120)
     st = await page.evaluate(STATE)
-    if move == 'manual' and not tested_pause: errors.append('never got to the pause check')
+    if not tested_pause: errors.append('never got to the pause check')
     print(f"{name}: finished={st['fin']} pieces={st['status']} | {st['finText']} | errors={errors[:3]} | {round(time.time() - t0)}s")
     print('   ', [x for x in log if not isinstance(x[0], float)] or '', ' timeline:', [x for x in log if isinstance(x[0], float)][:30])
     await page.close()

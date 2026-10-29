@@ -49,7 +49,8 @@ def watch(page, errors, port, name):
 
     def response(r):
         path = r.url.split('?')[0]
-        if r.status >= 400 and path.startswith(origin) and not path.endswith(OPTIONAL):
+        needed = path.startswith(origin) and not path.endswith(OPTIONAL)
+        if r.status >= 400 and needed:
             add(f'{r.status} {path[len(origin) - 1:]}')
     page.on('pageerror', lambda e: add(str(e)))
     page.on('response', response)
