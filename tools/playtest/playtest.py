@@ -2,16 +2,18 @@
 
 A robot player picks a hero, walks (with the arrow keys in manual mode), answers every question
 (sometimes picking a wrong answer first), blows Nibblers away (or is slow to on purpose) and builds the outpost.
-It reports how each piece ended up and any page errors, and saves screenshots to tools/playtest/out/.
+It reports how each piece ended up and saves screenshots to tools/playtest/out/. A scenario fails if the
+outpost isn't finished, the page throws an error, a file the game needs doesn't load, or (in manual mode)
+holding the gear button doesn't pause the game or tapping the ground doesn't walk the hero.
 
     pip install playwright && playwright install chromium
     python tools/playtest/playtest.py                 # all scenarios
     python tools/playtest/playtest.py phone-manual    # one scenario
 """
-import asyncio, functools, http.server, os, socketserver, sys, threading, time
+import asyncio, os, sys, time
 from playwright.async_api import async_playwright
+import localsite
 
-ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 OUT = os.path.join(os.path.dirname(__file__), 'out')
 PORT = 8780
 SPEED = 2.5
@@ -31,22 +33,11 @@ STATE = '''() => ({ phase, type: round && round.type, target: round && round.tar
   finText: document.getElementById('finText').textContent, paused: isPaused() })'''
 
 
-class Quiet(http.server.SimpleHTTPRequestHandler):
-    def log_message(self, *a): pass
-
-
-class Server(socketserver.ThreadingTCPServer):
-    # a thread per request, so a connection Chromium opens early can't hold up the rest,
-    # and a long enough queue that parallel pages aren't turned away
-    allow_reuse_address = daemon_threads = True
-    request_queue_size = 64
-
-
 async def play(browser, name, w, h, hero, diff, level, move, style):
     page = await browser.new_page(viewport={'width': w, 'height': h}, has_touch=True)
     errors = []
-    page.on('pageerror', lambda e: errors.append(str(e)))
-    await page.goto(f'http://127.0.0.1:{PORT}/index.html?speed={SPEED}')
+    localsite.watch(page, errors, PORT, name)
+    await page.goto(f'{localsite.address(PORT)}index.html?speed={SPEED}')
     await page.evaluate(f"localStorage.setItem('bobs-outpost-settings', JSON.stringify({{diff:'{diff}', unlocked:4, mode:'both', move:'{move}'}}))")
     await page.reload(); await page.wait_for_timeout(800)
     await page.click(f'.char[data-char="{hero}"]'); await page.wait_for_timeout(400)
@@ -80,12 +71,15 @@ async def play(browser, name, w, h, hero, diff, level, move, style):
                 gear = await page.locator('#gearBtn').bounding_box()
                 await page.mouse.move(gear['x'] + 20, gear['y'] + 20); await page.mouse.down(); await page.wait_for_timeout(900); await page.mouse.up()
                 a = await page.evaluate('hero.x'); await page.wait_for_timeout(600); b = await page.evaluate('hero.x')
-                p = await page.evaluate('isPaused()')
+                paused = await page.evaluate('isPaused()') and a == b
                 await shot('settings_ingame'); await page.click('#setDone')
-                log.append(('pause-check', 'paused' if p and a == b else 'NOT PAUSED'))
+                log.append(('pause-check', 'paused' if paused else 'NOT PAUSED'))
+                if not paused: errors.append('holding the gear button did not pause the game')
                 # tap the ground ahead once to check tap-to-walk
                 await page.mouse.click((st['heroX'] + 150) * sc, (st['GY'] + 10) * sc); await page.wait_for_timeout(500)
-                log.append(('tap-walk', 'moved' if await page.evaluate('hero.x') > b + 20 else 'DID NOT MOVE'))
+                moved = await page.evaluate('hero.x') > b + 20
+                log.append(('tap-walk', 'moved' if moved else 'DID NOT MOVE'))
+                if not moved: errors.append('tapping the ground did not walk the hero')
             if not holding:
                 await page.keyboard.down('ArrowRight'); holding = True
             await shot('walk')
@@ -107,6 +101,7 @@ async def play(browser, name, w, h, hero, diff, level, move, style):
             await shot('place'); b = st['box']; await page.wait_for_timeout(300); await page.mouse.click(b['cx'] * sc, b['cy'] * sc)
         await page.wait_for_timeout(120)
     st = await page.evaluate(STATE)
+    if move == 'manual' and not tested_pause: errors.append('never got to the pause check')
     print(f"{name}: finished={st['fin']} pieces={st['status']} | {st['finText']} | errors={errors[:3]} | {round(time.time() - t0)}s")
     print('   ', [x for x in log if not isinstance(x[0], float)] or '', ' timeline:', [x for x in log if isinstance(x[0], float)][:30])
     await page.close()
@@ -115,8 +110,7 @@ async def play(browser, name, w, h, hero, diff, level, move, style):
 
 async def main(names):
     os.makedirs(OUT, exist_ok=True)
-    srv = Server(('127.0.0.1', PORT), functools.partial(Quiet, directory=ROOT))
-    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    srv = localsite.serve(PORT)
     async with async_playwright() as p:
         browser = await p.chromium.launch(args=['--autoplay-policy=no-user-gesture-required'])
         results = await asyncio.gather(*[play(browser, n, *SCENARIOS[n]) for n in names])

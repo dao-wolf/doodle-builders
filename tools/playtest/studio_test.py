@@ -2,28 +2,18 @@
 
 Chromium is told to use a WAV file as its microphone. The test opens the studio, records one clip,
 checks it was trimmed and saved, exports the voice pack, imports it into a fresh browser profile,
-and checks the game then plays the recording instead of Jenny.
+and checks the game then plays the recording instead of Jenny. It fails on any page error or a file
+the game needs that doesn't load.
 
     python tools/playtest/studio_test.py                 # uses sample-speech.wav (Jenny saying "like sun")
     python tools/playtest/studio_test.py my-speech.wav
 """
-import asyncio, base64, functools, http.server, json, os, socketserver, sys, threading, wave, io
+import asyncio, base64, json, os, sys, wave, io
 from playwright.async_api import async_playwright
+import localsite
 
-ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 OUT = os.path.join(os.path.dirname(__file__), 'out')
 PORT = 8781
-
-
-class Quiet(http.server.SimpleHTTPRequestHandler):
-    def log_message(self, *a): pass
-
-
-class Server(socketserver.ThreadingTCPServer):
-    # a thread per request, so a connection Chromium opens early can't hold up the rest,
-    # and a long enough queue that parallel pages aren't turned away
-    allow_reuse_address = daemon_threads = True
-    request_queue_size = 64
 
 
 async def hold(page, sel, ms):
@@ -33,15 +23,14 @@ async def hold(page, sel, ms):
 
 async def main(mic_wav):
     os.makedirs(OUT, exist_ok=True)
-    srv = Server(('127.0.0.1', PORT), functools.partial(Quiet, directory=ROOT))
-    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    srv = localsite.serve(PORT)
     ok = True
     async with async_playwright() as p:
         browser = await p.chromium.launch(args=['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream',
                                                 f'--use-file-for-fake-audio-capture={mic_wav}', '--autoplay-policy=no-user-gesture-required'])
         ctx = await browser.new_context(viewport={'width': 1000, 'height': 800}, accept_downloads=True)
-        page = await ctx.new_page(); errors = []; page.on('pageerror', lambda e: errors.append(str(e)))
-        await page.goto(f'http://127.0.0.1:{PORT}/index.html'); await page.wait_for_timeout(600)
+        page = await ctx.new_page(); errors = []; localsite.watch(page, errors, PORT, 'studio')
+        await page.goto(f'{localsite.address(PORT)}index.html'); await page.wait_for_timeout(600)
         await hold(page, '#grownBtn', 1400)
         await page.click('#openStudio'); await page.wait_for_timeout(300)
         await page.screenshot(path=f'{OUT}/studio_open.png')
@@ -66,8 +55,8 @@ async def main(mic_wav):
         open(f'{OUT}/recorded_s_s.wav', 'wb').write(wav)
         # a fresh profile imports the pack, and the game should now use it
         ctx2 = await browser.new_context(viewport={'width': 1000, 'height': 800})
-        p2 = await ctx2.new_page(); p2.on('pageerror', lambda e: errors.append(str(e)))
-        await p2.goto(f'http://127.0.0.1:{PORT}/index.html'); await p2.wait_for_timeout(600)
+        p2 = await ctx2.new_page(); localsite.watch(p2, errors, PORT, 'studio import')
+        await p2.goto(f'{localsite.address(PORT)}index.html'); await p2.wait_for_timeout(600)
         await hold(p2, '#grownBtn', 1400); await p2.click('#openStudio'); await p2.wait_for_timeout(200)
         await p2.set_input_files('#importInput', path); await p2.wait_for_timeout(800)
         print('import:', await p2.text_content('#packMsg'))
