@@ -4,7 +4,7 @@ A static HTML, canvas and JavaScript learning game for children aged 2 to 5 (pho
 
 ## Every change
 
-- Run both playtests before and after (`tools/playtest/playtest.py` and `tools/playtest/studio_test.py`). They are the only tests; there are no unit tests yet.
+- Run both playtests before and after (`tools/playtest/playtest.py` and `tools/playtest/studio_test.py`). They are the only tests; there are no unit tests yet. Every pull request also runs them on GitHub Actions.
 - CodeScene and Socket Security check every pull request. Don't let Code Health drop; the rules are in `.codescene/code-health-rules.json`.
 - Don't add a `LICENSE` file. The owner is choosing a licence with a trade mark attorney.
 
@@ -14,6 +14,7 @@ A static HTML, canvas and JavaScript learning game for children aged 2 to 5 (pho
 - **Game flow** is a phase state machine in `js/game.js`: `menu → intro → walk → ask → reward → … → arrive → bask → carry → place → building → done`. Use `later()` for delayed game steps, not `setTimeout`: restarting a level bumps `gen`, which cancels them.
 - **Coordinates** are logical units scaled by `SC`. The hero, Nibblers and decorations are in world x (subtract `camX` to draw); question blocks, gems, particles and flying pieces are in screen coordinates.
 - **Voice priority** (`js/voice.js`): the player's own recording (IndexedDB), then `voice/my-voice.json`, then `voice/jenny.json`, then the device's speech engine. If any clip in a line is missing, the whole line falls back to the device voice.
+- **Keep every path relative** (`js/util.js`, not `/js/util.js`). GitHub Pages serves the game from `/doodle-builders/`, and so do the playtests.
 - **Never rename the `bobs-outpost-*` storage keys** (`localStorage` settings, IndexedDB `bobs-outpost-voice`, the voice pack format) without a migration. It would wipe children's progress and the family's recordings.
 
 ## Design decisions to keep

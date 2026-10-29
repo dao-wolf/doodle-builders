@@ -54,7 +54,9 @@ python tools/playtest/playtest.py              # robot plays four scenarios (pho
 python tools/playtest/studio_test.py           # voice studio with a pretend microphone
 ```
 
-Both scripts start their own local server. Screenshots and the exported test voice pack go to `tools/playtest/out/`.
+Both scripts start their own local server, which serves the game under `/doodle-builders/` as GitHub Pages does. They fail on a page error or any file the game needs that doesn't load. Screenshots and the exported test voice pack go to `tools/playtest/out/`.
+
+Every pull request runs both on GitHub Actions (`.github/workflows/playtests.yml`). If they fail, `tools/playtest/out/` is attached to the run as `playtest-out`.
 
 ## Code quality
 
