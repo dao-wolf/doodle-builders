@@ -1,0 +1,5 @@
+tools/playtest/out/
+tools/voice/models/
+__pycache__/
+*.pyc
+.DS_Store

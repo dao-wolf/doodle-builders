@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Doodle Builders</title>
+<meta name="description" content="A phonics and numbers building adventure for 3 to 5 year olds.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Silkscreen:wght@400;700&display=swap">
+<link rel="stylesheet" href="css/style.css">
+
+</head>
+<body>
+
+<canvas id="game" aria-label="Doodle Builders game world"></canvas>
+
+<div id="hud" hidden>
+  <div id="bag" aria-label="Outpost pieces collected"></div>
+  <div id="prompt" class="away" aria-live="polite">
+    <div id="pBig"></div><div id="pPic"></div><div id="pSlots"></div>
+    <button id="replay" aria-label="Hear it again">
+      <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path fill="#2b2140" d="M3 9h4l5-4v14l-5-4H3z"/><path fill="none" stroke="#2b2140" stroke-width="2.4" d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12"/></svg>
+    </button>
+  </div>
+  <div id="right">
+    <button id="musicBtn" class="iconbtn" aria-pressed="true" aria-label="Music on or off">
+      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="#2b2140" d="M9 4h11v3H12v10.5A3.5 3.5 0 1 1 9 14.1z"/><path fill="#2b2140" d="M17 7h3v8.5A3.5 3.5 0 1 1 17 12z"/></svg>
+    </button>
+    <button id="gearBtn" class="iconbtn hold" aria-label="Hold for settings">
+      <svg width="24" height="24" viewBox="0 0 12 12" aria-hidden="true" shape-rendering="crispEdges"><path fill="#2b2140" d="M5 0h2v2h1V1h2v2H9v1h3v2H9v1h1v2H8v-1H7v2H5V9H4v1H2V8h1V7H0V5h3V4H2V2h2v1h1zM5 4v4h2V4z"/></svg>
+    </button>
+    <button id="homeBtn" class="iconbtn hold" aria-label="Hold to go back to the start">
+      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="#2b2140" d="M12 3 2 11h3v9h5v-6h4v6h5v-9h3z"/></svg>
+    </button>
+  </div>
+</div>
+<div id="say"></div>
+
+<div id="controls" hidden>
+  <div class="grp" id="moveGrp">
+    <button id="leftBtn" class="big arrow" aria-label="Walk left"><svg width="34" height="34" viewBox="0 0 8 9" aria-hidden="true" shape-rendering="crispEdges"><g fill="#2b2140"><rect x="5" y="1" width="2" height="7"/><rect x="4" y="2" width="1" height="5"/><rect x="3" y="3" width="1" height="3"/><rect x="2" y="4" width="1" height="1"/></g></svg></button>
+    <button id="rightBtn" class="big arrow" aria-label="Walk right"><svg width="34" height="34" viewBox="0 0 8 9" aria-hidden="true" shape-rendering="crispEdges"><g fill="#2b2140"><rect x="1" y="1" width="2" height="7"/><rect x="3" y="2" width="1" height="5"/><rect x="4" y="3" width="1" height="3"/><rect x="5" y="4" width="1" height="1"/></g></svg></button>
+  </div>
+  <div class="grp" id="actGrp">
+    <button id="jumpBtn" class="big" aria-label="Jump">JUMP</button>
+    <button id="actBtn" class="big" aria-label="Sneeze">ACHOO!</button>
+  </div>
+</div>
+
+<div id="title" class="overlay">
+  <div class="panel">
+    <h1>Doodle <span>Builders</span></h1>
+    <p class="tiny">Adventure 1: Bob's Outpost</p>
+    <p class="label">WHO'S PLAYING?</p>
+    <div class="chars">
+      <button class="char" data-char="bob" aria-label="Play as Bob"><canvas id="cvBob" width="340" height="300"></canvas><b>BOB</b><small>Sneeze power</small></button>
+      <button class="char" data-char="henry" aria-label="Play as Mr Henry"><canvas id="cvHenry" width="340" height="300"></canvas><b>MR HENRY</b><small>Trump power</small></button>
+    </div>
+    <p class="label">GAME</p>
+    <div class="modes" role="group" aria-label="Game">
+      <button class="mode" data-mode="literacy" aria-pressed="false">abc sounds</button>
+      <button class="mode" data-mode="numeracy" aria-pressed="false">123 numbers</button>
+      <button class="mode" data-mode="both" aria-pressed="false">a1 both</button>
+    </div>
+    <button id="grownBtn" class="grownups hold" aria-label="Grown-ups: hold to open settings">Grown-ups: hold to open</button>
+  </div>
+</div>
+
+<div id="levels" class="overlay" hidden>
+  <div class="panel">
+    <h2>Pick an outpost</h2>
+    <div class="lvls" id="lvlGrid"></div>
+    <div class="btnrow"><button id="lvlBack" class="smallbtn">Back</button><span class="diffchip" id="diffChip"></span></div>
+  </div>
+</div>
+
+<div id="settings" class="overlay" hidden>
+  <div class="panel" role="dialog" aria-labelledby="setTitle">
+    <h2 id="setTitle">Grown-ups</h2>
+    <div class="set">
+      <b>GAME</b>
+      <div class="seg" role="radiogroup" aria-label="Game">
+        <label><input type="radio" name="mode" id="mLit" value="literacy"><span>Letters &amp; sounds</span></label>
+        <label><input type="radio" name="mode" id="mNum" value="numeracy"><span>Numbers</span></label>
+        <label><input type="radio" name="mode" id="mAll" value="both"><span>Both</span></label>
+      </div>
+    </div>
+    <div class="set">
+      <b>MOVEMENT</b>
+      <div class="seg" role="radiogroup" aria-label="Movement">
+        <label><input type="radio" name="move" id="mvManual" value="manual"><span>I steer (arrows)</span></label>
+        <label><input type="radio" name="move" id="mvAuto" value="auto"><span>Walks by itself</span></label>
+      </div>
+      <p class="tiny">I steer: hold the arrow buttons, use the arrow keys, or tap the ground to walk there.</p>
+    </div>
+    <div class="set">
+      <b>DIFFICULTY</b>
+      <div class="seg" role="radiogroup" aria-label="Difficulty">
+        <label><input type="radio" name="diff" id="dEasy" value="easy"><span>Easy</span></label>
+        <label><input type="radio" name="diff" id="dMed" value="medium"><span>Medium</span></label>
+        <label><input type="radio" name="diff" id="dHard" value="hard"><span>Hard</span></label>
+      </div>
+      <p class="tiny" id="diffHelp"></p>
+    </div>
+    <div class="set">
+      <b>PHONICS SOUNDS</b>
+      <p class="tiny">Reception sounds in Little Wandle Letters and Sounds Revised order, a week of new sounds per button. Pick the ones your child has been taught.</p>
+      <div id="terms"></div>
+    </div>
+    <div class="set">
+      <b>LETTERS SHOWN AS</b>
+      <div class="seg" role="radiogroup" aria-label="Letters shown as">
+        <label><input type="radio" name="case" id="cLow" value="lower"><span>lowercase</span></label>
+        <label><input type="radio" name="case" id="cUp" value="upper"><span>UPPERCASE</span></label>
+        <label><input type="radio" name="case" id="cBoth" value="both"><span>Both</span></label>
+      </div>
+    </div>
+    <div class="set">
+      <b>NUMBERS</b>
+      <div class="seg" role="radiogroup" aria-label="Numbers up to">
+        <label><input type="radio" name="nums" id="n5" value="5"><span>1 to 5</span></label>
+        <label><input type="radio" name="nums" id="n10" value="10"><span>1 to 10</span></label>
+      </div>
+    </div>
+    <div class="set">
+      <b>VOICE</b>
+      <div class="seg" role="radiogroup" aria-label="Voice">
+        <label><input type="radio" name="voice" id="vNat" value="natural"><span>Natural (Jenny)</span></label>
+        <label><input type="radio" name="voice" id="vDev" value="device"><span>Device voice</span></label>
+      </div>
+      <label class="check"><input type="checkbox" id="vMine"><span>Use my own recordings first</span></label>
+      <div class="btnrow" style="justify-content:flex-start"><button id="openStudio" class="smallbtn" type="button">Open voice studio</button><button id="testVoice" class="smallbtn" type="button">Test the voice</button></div>
+      <p class="tiny" id="voiceStatus" aria-live="polite"></p>
+    </div>
+    <div class="set">
+      <b>OUTPOSTS</b>
+      <div class="btnrow" style="justify-content:flex-start"><button id="unlockAll" class="smallbtn" type="button">Unlock all outposts</button><button id="resetProg" class="smallbtn" type="button">Start again from outpost 1</button></div>
+    </div>
+    <p class="tiny">Not affiliated with Little Wandle. Voice: Jenny (Dioco). Settings are saved on this device.</p>
+    <button id="setDone" class="done">DONE</button>
+  </div>
+</div>
+
+<div id="studio" class="overlay" hidden>
+  <div class="panel studio" role="dialog" aria-labelledby="studioTitle">
+    <div class="shead"><h2 id="studioTitle">Voice studio</h2><button id="studioClose" class="done">DONE</button></div>
+    <p class="tiny">Record your own voice for the sounds, words, numbers and lines. Your recordings play instead of Jenny's. Start with <b>Sounds</b>: those are the ones children copy.</p>
+    <p class="note" id="micNote" hidden></p>
+    <div class="reccard">
+      <div class="reclabel" id="recLabel"></div>
+      <p class="recsay" id="recSay"></p>
+      <div class="meter" aria-hidden="true"><span id="meterBar"></span></div>
+      <div class="btnrow">
+        <button id="recBtn" class="play rec">&#9679; RECORD</button>
+        <button id="recPlay" class="smallbtn" type="button">&#9654; Play</button>
+        <button id="recNext" class="smallbtn" type="button">Next &#9656;</button>
+        <label class="smallbtn upl">Upload a file<input type="file" accept="audio/*" id="uplInput"></label>
+        <button id="recDel" class="smallbtn" type="button">Delete</button>
+      </div>
+      <p class="tiny" id="recMsg" aria-live="polite"></p>
+    </div>
+    <div class="tabs" role="tablist" id="studioTabs"></div>
+    <div class="cliplist" id="clipList"></div>
+    <div class="set">
+      <b>VOICE PACK</b>
+      <p class="tiny">Export saves all your recordings in one file, my-voice.json. Put it in the game's code at voice/my-voice.json and your voice plays on every device. Import loads a pack onto this device.</p>
+      <div class="btnrow" style="justify-content:flex-start">
+        <button id="exportBtn" class="smallbtn" type="button">Export voice pack</button>
+        <label class="smallbtn upl">Import voice pack<input type="file" accept=".json,application/json" id="importInput"></label>
+        <button id="clearBtn" class="smallbtn" type="button">Delete all my recordings</button>
+      </div>
+      <p class="tiny" id="packMsg" aria-live="polite"></p>
+    </div>
+  </div>
+</div>
+
+<div id="finish" class="overlay" hidden>
+  <div class="panel">
+    <h1 id="finTitle">Outpost <span>built!</span></h1>
+    <canvas id="cvFinish" width="320" height="240" style="width:min(240px,70vw);aspect-ratio:4/3;justify-self:center;border:4px solid var(--ink)"></canvas>
+    <p id="finText"></p>
+    <div class="btnrow">
+      <button id="nextBtn" class="play">NEXT OUTPOST</button>
+      <button id="againBtn" class="play alt">PLAY AGAIN</button>
+    </div>
+    <button id="pickBtn" class="smallbtn" style="justify-self:center">Pick another outpost</button>
+  </div>
+</div>
+
+
+<script src="js/util.js"></script>
+<script src="js/content.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/art.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/voice.js"></script>
+<script src="js/game.js"></script>
+<script src="js/render.js"></script>
+<script src="js/studio.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
