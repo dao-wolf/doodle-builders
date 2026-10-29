@@ -5,6 +5,7 @@
 function resize() {
   DPR = Math.min(2, window.devicePixelRatio || 1);
   const vw = window.innerWidth, vh = window.innerHeight;
+  if (!vw || !vh) return; // no size yet (a hidden frame, or a phone web view before layout): keep the last layout
   cv.width = Math.round(vw * DPR); cv.height = Math.round(vh * DPR);
   SC = Math.min(vw / 560, vh / 470);
   W = vw / SC; H = vh / SC;

@@ -55,7 +55,7 @@ The outposts are block lists in `LEVELS` (same file), so new outposts can be add
 ```bash
 pip install -r tools/playtest/requirements.txt
 playwright install chromium
-python tools/playtest/playtest.py              # robot plays seven scenarios (phone and desktop, all difficulties, Halloween, Christmas and the normal look)
+python tools/playtest/playtest.py              # robot plays seven scenarios (phone and desktop, all difficulties, Halloween, Christmas and the normal look), plus a check that the game survives starting with no window size
 python tools/playtest/studio_test.py           # voice studio with a pretend microphone
 ```
 

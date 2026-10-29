@@ -30,7 +30,7 @@ jobs:
           playwright install --with-deps chromium
 
       # Both scripts start their own local server.
-      - name: Game playtest (seven scenarios)
+      - name: Game playtest (seven scenarios and the zero-size check)
         run: python tools/playtest/playtest.py
 
       - name: Voice studio test
