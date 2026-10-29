@@ -51,6 +51,10 @@
 
 <div id="title" class="overlay">
   <div class="panel">
+    <button id="seasonBtn" type="button" aria-pressed="true" hidden>
+      <svg class="pic halloween" viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges"><g fill="#2b2140"><rect x="3" y="3" width="10" height="12"/><rect x="1" y="5" width="14" height="8"/><rect x="0" y="6" width="16" height="6"/><rect x="6" y="0" width="3" height="4"/></g><rect x="7" y="1" width="1" height="3" fill="#4a9a34"/><rect x="8" y="2" width="3" height="1" fill="#4a9a34"/><g fill="#f08a2c"><rect x="4" y="4" width="8" height="10"/><rect x="2" y="6" width="12" height="6"/><rect x="1" y="7" width="14" height="4"/></g><g fill="#c85a1e"><rect x="6" y="4" width="1" height="10"/><rect x="9" y="4" width="1" height="10"/></g><g fill="#ffe066"><rect x="4" y="7" width="2" height="2"/><rect x="10" y="7" width="2" height="2"/><rect x="5" y="11" width="6" height="1"/><rect x="4" y="10" width="1" height="1"/><rect x="11" y="10" width="1" height="1"/></g></svg>
+      <svg class="pic christmas" viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges"><g fill="#ffd23f"><rect x="7" y="0" width="2" height="3"/><rect x="6" y="1" width="4" height="1"/></g><g fill="#2f9e4a"><rect x="6" y="3" width="4" height="2"/><rect x="5" y="5" width="6" height="2"/><rect x="4" y="7" width="8" height="2"/><rect x="3" y="9" width="10" height="2"/><rect x="2" y="11" width="12" height="2"/></g><rect x="7" y="13" width="2" height="3" fill="#8a5a30"/><rect x="6" y="5" width="1" height="1" fill="#e23b3b"/><rect x="9" y="7" width="1" height="1" fill="#ffd23f"/><rect x="5" y="9" width="1" height="1" fill="#5ab4ff"/><rect x="10" y="10" width="1" height="1" fill="#e23b3b"/><rect x="7" y="11" width="1" height="1" fill="#ffffff"/><rect x="4" y="12" width="1" height="1" fill="#ffd23f"/><rect x="11" y="12" width="1" height="1" fill="#5ab4ff"/></svg>
+    </button>
     <h1>Doodle <span>Builders</span></h1>
     <p class="tiny">Adventure 1: Bob's Outpost</p>
     <p class="label">WHO'S PLAYING?</p>
@@ -135,6 +139,14 @@
       <p class="tiny" id="voiceStatus" aria-live="polite"></p>
     </div>
     <div class="set">
+      <b>SEASONAL THEMES</b>
+      <div class="seg" role="radiogroup" aria-label="Seasonal themes">
+        <label><input type="radio" name="seasons" id="sAuto" value="auto"><span>Automatic</span></label>
+        <label><input type="radio" name="seasons" id="sOff" value="off"><span>Off</span></label>
+      </div>
+      <p class="tiny">Automatic: a Halloween look from 15 October to 3 November and a Christmas look from 1 December to 6 January. While one is on, children can switch it off and on with the picture button on the start screen.</p>
+    </div>
+    <div class="set">
       <b>OUTPOSTS</b>
       <div class="btnrow" style="justify-content:flex-start"><button id="unlockAll" class="smallbtn" type="button">Unlock all outposts</button><button id="resetProg" class="smallbtn" type="button">Start again from outpost 1</button></div>
     </div>
@@ -193,6 +205,7 @@
 <script src="js/util.js"></script>
 <script src="js/content.js"></script>
 <script src="js/settings.js"></script>
+<script src="js/seasons.js"></script>
 <script src="js/art.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/voice.js"></script>

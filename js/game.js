@@ -37,7 +37,7 @@ function popText(text, x, y, size = 40, color = '#ffd23f', life = 1.1) { pops.pu
 
 function startLevel(i) {
   gen++; tasks.length = 0; stopVoice();
-  levelIdx = i; LV = LEVELS[i]; TH = THEMES[LV.theme]; GT = themeTextures(TH);
+  levelIdx = i; LV = LEVELS[i];
   resize();
   const n = LV.pieces.length, SEG = 640, FIRST = 520;
   stops = Array.from({ length: n }, (_, k) => FIRST + k * SEG);
@@ -54,14 +54,7 @@ function startLevel(i) {
     const count = D === 'easy' ? (k % 2 === 1 ? 1 : 0) : D === 'medium' ? 1 + (k % 3 === 0 ? 1 : 0) : 2 + (k % 2);
     for (let j = 0; j < count; j++) spawns.push({ x: lerp(a, b, 0.25 + 0.5 * (j + 0.5) / count), behind: Math.random() < DIFF[D].behind, done: false });
   }
-  // scenery
-  const r = seeded(100 + i * 17); decos = [];
-  for (let x = 160; x < siteCam + 40; x += 110 + r() * 160) {
-    if (stops.some(s => Math.abs(x - (s + 140)) < 70)) continue;
-    decos.push({ x, kind: r() < 0.55 ? TH.trees[Math.floor(r() * TH.trees.length)] : TH.small[Math.floor(r() * TH.small.length)], s: 0.8 + r() * 0.4, seed: r() });
-  }
-  decos.sort((p, q) => (isTree(p.kind) ? 0 : 1) - (isTree(q.kind) ? 0 : 1));
-  flakes = TH.snow ? Array.from({ length: 50 }, () => ({ x: rand(0, 1), y: rand(0, 1), s: rand(2, 5), v: rand(20, 45) })) : [];
+  dressLand(i);
   // HUD
   $('bag').innerHTML = LV.pieces.map((p, k) => { p.icon = p.icon || pieceIcon(p); return `<span class="bslot" id="slot${k}"><img src="${p.icon}" alt=""></span>`; }).join('');
   $('prompt').classList.add('away');
@@ -73,7 +66,40 @@ function startLevel(i) {
   hero.happyT = 1.4;
   later(3.8, () => { if (phase === 'intro') phase = 'walk'; });
 }
-const isTree = k => ['oak', 'pine', 'palm', 'snowpine'].includes(k);
+const isTree = k => ['oak', 'pine', 'palm', 'snowpine', 'xtree'].includes(k);
+// The land around outpost i: its look (seasonal if a season is showing), scenery, and any falling snow or leaves.
+function dressLand(i) {
+  TH = landTheme(LEVELS[i].theme); GT = themeTextures(TH);
+  const r = seeded(100 + i * 17); decos = [];
+  for (let x = 160; x < siteCam + 40; x += 110 + r() * 160) {
+    if (stops.some(s => Math.abs(x - (s + 140)) < 70)) continue;
+    decos.push({ x, kind: r() < 0.55 ? TH.trees[Math.floor(r() * TH.trees.length)] : TH.small[Math.floor(r() * TH.small.length)], s: 0.8 + r() * 0.4, seed: r() });
+  }
+  decos.sort((p, q) => (isTree(p.kind) ? 0 : 1) - (isTree(q.kind) ? 0 : 1));
+  flakes = fallingBits(TH);
+}
+const SNOWFALL = { n: 50, size: [2, 5], speed: [20, 45], cols: ['rgba(255,255,255,.85)'] };
+function fallingBits(th) {
+  const f = th.fall || (th.snow ? SNOWFALL : null);
+  if (!f) return [];
+  return Array.from({ length: f.n }, () => ({ x: rand(0, 1), y: rand(0, 1), s: rand(...f.size), v: rand(...f.speed), c: pick(f.cols) }));
+}
+// Shows the seasonal look while a season's window is open, unless a child has switched it off with the picture button.
+function applySeason() {
+  const was = SEASON;
+  seasonOpen = seasonWindow();
+  SEASON = seasonOpen && S.seasonOff !== seasonOpen.key ? SEASONS[seasonOpen.id] : null;
+  document.body.dataset.season = SEASON ? SEASON.id : '';
+  const btn = $('seasonBtn'); btn.hidden = !seasonOpen;
+  if (seasonOpen) { btn.dataset.season = seasonOpen.id; btn.setAttribute('aria-pressed', SEASON ? 'true' : 'false'); btn.setAttribute('aria-label', SEASONS[seasonOpen.id].name + ' look'); }
+  if (SEASON === was) return;
+  skinOutposts(SEASON);
+  if (LV) dressLand(levelIdx);
+}
+$('seasonBtn').addEventListener('click', () => {
+  audioInit(); S.seasonOff = SEASON ? seasonOpen.key : ''; saveSettings(); applySeason();
+  if (SEASON) SFX.good(); else SFX.pop();
+});
 
 function setSlot(i, cls, popIt = true) {
   const el = $('slot' + i); if (!el) return;
@@ -231,12 +257,14 @@ function nextBuild() {
   buildIdx = i;
   askQuestion('build', [status[i] === 'lost' ? 'recover' : 'build', LV.pieces[i].clip]);
 }
+const PARTY = ['#ff6b6b', '#ffd43b', '#69db7c', '#4dabf7', '#f783ac'];
+const partyCols = () => (SEASON ? SEASON.party : PARTY);
 function finishLevel() {
   phase = 'done'; $('prompt').classList.add('away');
   const gone = status.filter(s => s === 'gone').length, built = status.filter(s => s === 'built').length;
   talk([built === 0 ? 'again' : gone ? 'kept' : 'done']);
   hero.dance = true; SFX.party();
-  for (let k = 0; k < 6; k++) later(k * 0.45, () => { burst(rand(80, W - 80), rand(80, GY - 200), 30, ['#ff6b6b', '#ffd43b', '#69db7c', '#4dabf7', '#f783ac'], [150, 380], [4, 8], 1.2, 250); SFX.pop(); });
+  for (let k = 0; k < 6; k++) later(k * 0.45, () => { burst(rand(80, W - 80), rand(80, GY - 200), 30, partyCols(), [150, 380], [4, 8], 1.2, 250); SFX.pop(); });
   if (built > 0 && levelIdx + 1 >= S.unlocked && levelIdx + 1 < LEVELS.length) { S.unlocked = levelIdx + 2; saveSettings(); }
   later(4.2, () => {
     $('finTitle').innerHTML = built === 0 ? 'Oh no, <span>Nibblers!</span>' : `${LV.name} <span>built!</span>`;
@@ -511,6 +539,6 @@ function update(dt) {
   parts = parts.filter(p => p.age < p.life);
   pops.forEach(p => { p.age += dt; }); pops = pops.filter(p => p.age < p.life);
   shake *= Math.pow(0.002, dt);
-  if (hero.dance && Math.random() < dt * 3) burst(rand(40, W - 40), -10, 6, ['#ff6b6b', '#ffd43b', '#69db7c', '#4dabf7', '#f783ac'], [20, 80], [4, 7], 2.4, 160);
+  if (hero.dance && Math.random() < dt * 3) burst(rand(40, W - 40), -10, 6, partyCols(), [20, 80], [4, 7], 2.4, 160);
   flakes.forEach(f => { f.y += f.v * dt / H; f.x += Math.sin(now + f.s * 3) * 0.01 * dt; if (f.y > 1) { f.y = 0; f.x = Math.random(); } });
 }

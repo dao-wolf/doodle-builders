@@ -12,7 +12,7 @@ function frame(t) {
   requestAnimationFrame(frame);
 }
 addEventListener('resize', resize);
-buildSettingsUI(); fillSettingsUI(); syncModeButtons();
+buildSettingsUI(); fillSettingsUI(); syncModeButtons(); applySeason();
 $('musicBtn').setAttribute('aria-pressed', S.music ? 'true' : 'false');
 resize();
 const boot = () => requestAnimationFrame(frame);

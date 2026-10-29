@@ -10,7 +10,7 @@ const DIFF = {
   hard: { name: 'Hard', speed: 92, behind: 0.5, steal: 'gone', nibble: 1.2, leave: 0, returnP: 0.5, askSpawn: 14,
     help: 'Lots of persistent Nibblers that come back for more. Stolen pieces are gone for good, so the outpost is built with whatever you keep.' },
 };
-const DEFAULTS = { mode: 'both', weeks: WEEKS.filter(w => w.term === 'Autumn 1').map(w => w.id), letterCase: 'lower', nums: 5, voice: 'natural', myVoice: true, move: 'manual', music: true, diff: 'easy', char: 'bob', unlocked: 1 };
+const DEFAULTS = { mode: 'both', weeks: WEEKS.filter(w => w.term === 'Autumn 1').map(w => w.id), letterCase: 'lower', nums: 5, voice: 'natural', myVoice: true, move: 'manual', music: true, diff: 'easy', char: 'bob', unlocked: 1, seasons: 'auto', seasonOff: '' };
 let S = Object.assign({}, DEFAULTS);
 try { const saved = JSON.parse(localStorage.getItem('bobs-outpost-settings') || 'null'); if (saved) S = Object.assign(S, saved); } catch (e) { /* storage unavailable */ }
 if (!DIFF[S.diff]) S.diff = 'easy';
@@ -35,20 +35,21 @@ function buildSettingsUI() {
   $('unlockAll').addEventListener('click', () => { S.unlocked = LEVELS.length; saveSettings(); $('unlockAll').textContent = 'All outposts unlocked'; });
   $('resetProg').addEventListener('click', () => { S.unlocked = 1; saveSettings(); $('resetProg').textContent = 'Back to outpost 1'; });
 }
+// the dialog's radio groups: input name -> setting in S
+const RADIOS = { mode: 'mode', case: 'letterCase', nums: 'nums', voice: 'voice', diff: 'diff', move: 'move', seasons: 'seasons' };
 function fillSettingsUI() {
   const set = (n, v) => { const el = $('settings').querySelector(`input[name=${n}][value="${v}"]`); if (el) el.checked = true; };
-  set('mode', S.mode); set('case', S.letterCase); set('nums', S.nums); set('voice', S.voice); set('diff', S.diff); set('move', S.move);
+  Object.entries(RADIOS).forEach(([n, k]) => set(n, S[k]));
   $('vMine').checked = S.myVoice !== false;
   $('terms').querySelectorAll('[data-week]').forEach(x => { x.checked = S.weeks.includes(x.dataset.week); });
   $('diffHelp').textContent = DIFF[S.diff].help;
   $('unlockAll').textContent = 'Unlock all outposts'; $('resetProg').textContent = 'Start again from outpost 1';
 }
 function readSettings() {
-  const v = n => ($('settings').querySelector(`input[name=${n}]:checked`) || {}).value;
-  S.mode = v('mode') || S.mode; S.letterCase = v('case') || S.letterCase; S.nums = +(v('nums') || S.nums); S.voice = v('voice') || S.voice; S.diff = v('diff') || S.diff; S.move = v('move') || S.move;
+  Object.entries(RADIOS).forEach(([n, k]) => { const el = $('settings').querySelector(`input[name=${n}]:checked`); if (el) S[k] = k === 'nums' ? +el.value : el.value; });
   S.myVoice = $('vMine').checked;
   S.weeks = [...$('terms').querySelectorAll('[data-week]:checked')].map(x => x.dataset.week);
   $('diffHelp').textContent = DIFF[S.diff].help;
-  saveSettings(); syncModeButtons(); if (typeof applyControls === 'function') applyControls();
+  saveSettings(); syncModeButtons(); if (typeof applyControls === 'function') { applyControls(); applySeason(); }
 }
 function syncModeButtons() { document.querySelectorAll('.mode').forEach(b => b.setAttribute('aria-pressed', b.dataset.mode === S.mode ? 'true' : 'false')); }
