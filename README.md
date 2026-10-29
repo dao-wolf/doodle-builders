@@ -16,10 +16,11 @@ A learning game for children aged 2 to 5: answer phonics and number questions to
 - **Numbers**: find the number (1 to 5 or 1 to 10) and count gems.
 - **Gentle help**: everything is spoken as well as shown, and a wrong answer gets a hint and another go.
 - **Your own voice**: record the sounds in the voice studio and the game uses your voice first.
+- **Seasonal looks**: Halloween (15 October to 3 November) and Christmas (1 December to 6 January) dress up the lands, outposts and heroes. Children can switch the look off and on with a picture button on the start screen.
 
 ## More
 
-- [For grown-ups](docs/grown-ups.md): the settings, and recording your own voice.
+- [For grown-ups](docs/grown-ups.md): the settings, seasonal themes, and recording your own voice.
 - [Developing](docs/developing.md): running it on your computer, how the code is laid out, testing and code quality.
 
 ## Credits

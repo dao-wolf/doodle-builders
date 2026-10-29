@@ -5,6 +5,8 @@ A robot player picks a hero, walks (with the arrow keys in manual mode), answers
 It reports how each piece ended up and saves screenshots to tools/playtest/out/. A scenario fails if the
 outpost isn't finished, the page throws an error, a file the game needs doesn't load, or (in manual mode)
 holding the gear button doesn't pause the game or tapping the ground doesn't walk the hero.
+The seasonal scenarios force a look with ?season= or ?date=, and fail if the start screen shows the wrong look
+or its picture button doesn't switch the look off and on.
 
     pip install playwright && playwright install chromium
     python tools/playtest/playtest.py                 # all scenarios
@@ -18,11 +20,14 @@ OUT = os.path.join(os.path.dirname(__file__), 'out')
 PORT = 8780
 SPEED = 2.5
 
-SCENARIOS = {  # name: (width, height, hero, difficulty, level, movement, style)
+SCENARIOS = {  # name: (width, height, hero, difficulty, level, movement, style[, (query, the look it should show)])
     'phone-manual': (390, 844, 'bob', 'easy', 0, 'manual', 'defend'),
     'desktop-auto-medium': (1280, 720, 'henry', 'medium', 1, 'auto', 'lazy'),
     'phone-hard-manual': (390, 844, 'henry', 'hard', 2, 'manual', 'lazy'),
     'desktop-hard-auto': (1280, 720, 'bob', 'hard', 3, 'auto', 'defend'),
+    'halloween': (390, 844, 'henry', 'medium', 0, 'manual', 'lazy', ('season=halloween', 'halloween')),
+    'christmas': (1280, 720, 'bob', 'easy', 3, 'auto', 'defend', ('date=2026-12-24', 'christmas')),
+    'normal-look': (1280, 720, 'henry', 'easy', 2, 'auto', 'defend', ('season=none', '')),
 }
 
 STATE = '''() => ({ phase, type: round && round.type, target: round && round.target, SC, status: status.slice(), GY, camX,
@@ -65,13 +70,27 @@ async def check_pause_and_tap(page, st, shot, log, errors):
                                   (moved, 'tapping the ground did not walk the hero')) if not ok)
 
 
-async def play(browser, name, w, h, hero, diff, level, move, style):
+async def check_season(page, name, season, errors):
+    """The start screen shows the scenario's look, and its picture button switches the look off and back on.
+    Scenarios without a season leave the look to today's date and aren't checked."""
+    look = season[1]
+    if look is None: return
+    seen = [await page.evaluate('document.body.dataset.season')]
+    for _ in range(2 if await page.is_visible('#seasonBtn') else 0):  # with no season there must be no button
+        await page.click('#seasonBtn'); seen.append(await page.evaluate('document.body.dataset.season'))
+    await page.screenshot(path=f'{OUT}/{name}_title.png')
+    want = [look, '', look] if look else ['']
+    if seen != want: errors.append(f'start screen looks {seen}, expected {want}')
+
+
+async def play(browser, name, w, h, hero, diff, level, move, style, season=('', None)):
     page = await browser.new_page(viewport={'width': w, 'height': h}, has_touch=True)
     errors = []
     localsite.watch(page, errors, PORT, name)
-    await page.goto(f'{localsite.address(PORT)}index.html?speed={SPEED}')
+    await page.goto(f'{localsite.address(PORT)}index.html?speed={SPEED}&{season[0]}')
     await page.evaluate(f"localStorage.setItem('bobs-outpost-settings', JSON.stringify({{diff:'{diff}', unlocked:4, mode:'both', move:'{move}'}}))")
     await page.reload(); await page.wait_for_timeout(800)
+    await check_season(page, name, season, errors)
     await page.click(f'.char[data-char="{hero}"]'); await page.wait_for_timeout(400)
     await page.click(f'.lvl[data-lvl="{level}"]')
     shots, log, seen, last, t0, holding = set(), [], None, None, time.time(), False

@@ -6,14 +6,16 @@ function drawSky(time) {
   const g = ctx.createLinearGradient(0, 0, 0, GY);
   g.addColorStop(0, TH.sky[0]); g.addColorStop(0.55, TH.sky[1]); g.addColorStop(1, TH.sky[2]);
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, GY + 2);
-  const sx = W * 0.7 - camX * 0.03, sy = GY - 230;
-  ctx.fillStyle = 'rgba(255,245,190,.35)'; ctx.fillRect(sx - 60, sy - 60, 120, 120); ctx.fillStyle = '#fff4bf'; ctx.fillRect(sx - 40, sy - 40, 80, 80);
-  ctx.fillStyle = 'rgba(255,255,255,.95)';
+  drawSkyLights(time);
+  ctx.fillStyle = TH.cloud || 'rgba(255,255,255,.95)';
   [[40, 70, 1, 10], [W * 0.5, 130, 0.8, 7], [W * 0.25, 210, 0.6, 5], [W * 0.8, 40, 0.9, 12]].forEach(([x0, y, s, v]) => {
     const x = ((((x0 + v * time - camX * 0.12) % (W + 240)) + W + 240) % (W + 240)) - 200;
     ctx.fillRect(x, y + 14 * s, 140 * s, 36 * s); ctx.fillRect(x + 26 * s, y, 74 * s, 22 * s); ctx.fillRect(x + 96 * s, y + 6 * s, 76 * s, 34 * s);
   });
-  // two hill layers with parallax
+  drawHills();
+}
+// two hill layers with parallax
+function drawHills() {
   [[0.2, 44, TH.far, GY - 120, 1], [0.42, 52, TH.near, GY - 70, 2]].forEach(([par, step, col, base, layer]) => {
     const off = camX * par, i0 = Math.floor(off / step) - 1, i1 = i0 + Math.ceil(W / step) + 3;
     for (let i = i0; i < i1; i++) {
@@ -27,6 +29,34 @@ function drawSky(time) {
     }
   });
 }
+// the sun, or for Halloween a big moon with stars and a few friendly bats
+function drawSkyLights(time) {
+  const sx = W * 0.7 - camX * 0.03, sy = GY - 230;
+  if (TH.stars) drawStars(time);
+  (TH.light === 'moon' ? drawMoon : drawSun)(sx, sy);
+  if (TH.bats) drawBats(time);
+}
+function drawSun(sx, sy) { ctx.fillStyle = 'rgba(255,245,190,.35)'; ctx.fillRect(sx - 60, sy - 60, 120, 120); ctx.fillStyle = '#fff4bf'; ctx.fillRect(sx - 40, sy - 40, 80, 80); }
+function drawMoon(sx, sy) {
+  ctx.fillStyle = 'rgba(255,240,190,.16)'; ctx.fillRect(sx - 60, sy - 60, 120, 120);
+  ctx.fillStyle = '#fff1b8'; ctx.fillRect(sx - 30, sy - 40, 60, 80); ctx.fillRect(sx - 40, sy - 30, 80, 60);
+  ctx.fillStyle = '#efd98e'; ctx.fillRect(sx - 18, sy - 16, 12, 10); ctx.fillRect(sx + 10, sy + 6, 14, 10); ctx.fillRect(sx - 8, sy + 20, 8, 6);
+}
+function drawStars(time) {
+  for (let i = 0; i < 22; i++) {
+    ctx.fillStyle = `rgba(255,246,207,${0.45 + 0.5 * Math.sin(time * 2 + i * 1.7) ** 2})`;
+    ctx.fillRect(hash(i, 7) * W, 12 + hash(i, 8) * (GY - 180), 3, 3);
+  }
+}
+function drawBats(time) {
+  for (let i = 0; i < 3; i++) {
+    const span = W + 120, x = ((time * (24 + i * 7) + i * 260 - camX * 0.05) % span + span) % span - 60;
+    const y = GY - 270 + i * 36 + Math.sin(time * 2 + i * 2) * 10, wy = Math.sin(time * 12 + i * 2) > 0 ? -8 : -1;
+    ctx.fillStyle = '#3a2856'; ctx.fillRect(x - 5, y - 4, 10, 9); ctx.fillRect(x - 5, y - 7, 3, 3); ctx.fillRect(x + 2, y - 7, 3, 3);
+    ctx.fillRect(x - 14, y + wy, 9, 4); ctx.fillRect(x + 5, y + wy, 9, 4);
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(x - 3, y - 2, 2, 2); ctx.fillRect(x + 1, y - 2, 2, 2);
+  }
+}
 function drawGround() {
   const off = ((camX % 64) + 64) % 64;
   for (let x = -off - 64; x < W + 64; x += 64) ctx.drawImage(GT.top, x, GY - 22, 64, 56);
@@ -34,35 +64,70 @@ function drawGround() {
   for (let x = -off - 64; x < W + 64; x += 64) { ctx.drawImage(GT.lip, x, GY + 34, 64, 16); for (let y = GY + 50; y < H; y += 64) ctx.drawImage(GT.dirt, x, y, 64, 64); }
 }
 function drawDeco(d, time) {
-  const x = d.x - camX, s = d.s;
+  const x = d.x - camX;
   if (x < -140 || x > W + 140) return;
-  ctx.save(); ctx.translate(x, GY - 6); ctx.scale(s, s);
-  const leaf = GT.leaf;
-  if (d.kind === 'oak') {
+  ctx.save(); ctx.translate(x, GY - 6); ctx.scale(d.s, d.s);
+  DECOS[d.kind](d, time, GT.leaf);
+  ctx.restore();
+}
+function pineTree(leaf, snowy) {
+  ctx.drawImage(T.trunk, -7, -40, 14, 40);
+  [5, 4, 3, 2, 1].forEach((n, k) => { for (let j = 0; j < n; j++) { const bx = -n * 11 + j * 22, by = -62 - k * 22; ctx.drawImage(leaf, 0, 0, 22, 22, bx, by, 22, 22); if (snowy) { ctx.fillStyle = '#ffffff'; ctx.fillRect(bx, by, 22, 6); } } });
+}
+function snowman() { ctx.fillStyle = '#ffffff'; ctx.fillRect(-12, -24, 24, 24); ctx.fillRect(-9, -42, 18, 18); ctx.fillStyle = '#2b2140'; ctx.fillRect(-5, -36, 3, 3); ctx.fillRect(3, -36, 3, 3); ctx.fillStyle = '#ff8a3d'; ctx.fillRect(0, -32, 8, 3); }
+// scenery, drawn standing on the ground at (0, 0)
+const DECOS = {
+  oak: (d, time, leaf) => {
     ctx.drawImage(T.trunk, -10, -110, 20, 110);
     [[-45, -170], [-15, -170], [15, -170], [-30, -200], [0, -200], [-60, -140], [-30, -140], [0, -140], [30, -140]].forEach(([a, b]) => { ctx.drawImage(leaf, a, b, 30, 30); ctx.fillStyle = 'rgba(255,255,255,.14)'; ctx.fillRect(a, b, 30, 4); });
-  } else if (d.kind === 'pine' || d.kind === 'snowpine') {
-    ctx.drawImage(T.trunk, -7, -40, 14, 40);
-    [5, 4, 3, 2, 1].forEach((n, k) => { for (let j = 0; j < n; j++) { const bx = -n * 11 + j * 22, by = -62 - k * 22; ctx.drawImage(leaf, 0, 0, 22, 22, bx, by, 22, 22); if (d.kind === 'snowpine') { ctx.fillStyle = '#ffffff'; ctx.fillRect(bx, by, 22, 6); } } });
-  } else if (d.kind === 'palm') {
+  },
+  pine: (d, time, leaf) => pineTree(leaf, false),
+  snowpine: (d, time, leaf) => pineTree(leaf, true),
+  palm: (d, time, leaf) => {
     for (let k = 0; k < 9; k++) ctx.drawImage(T.palm, -7 + Math.sin(k * 0.35) * 10, -14 - k * 13, 14, 14);
     const tx = Math.sin(8 * 0.35) * 10, ty = -126;
     for (let k = 0; k < 6; k++) { ctx.save(); ctx.translate(tx, ty); ctx.rotate(-Math.PI + k * Math.PI / 5 + Math.sin(time * 1.5 + k) * 0.05); ctx.drawImage(leaf, 0, 0, 30, 12, 0, -6, 52, 12); ctx.restore(); }
     ctx.fillStyle = '#7a5230'; ctx.fillRect(tx - 6, ty + 2, 8, 8); ctx.fillRect(tx + 3, ty + 4, 8, 8);
-  } else if (d.kind === 'flower') {
+  },
+  flower: d => {
     const c = ['#ff6b8a', '#ffd23f', '#a78bfa', '#ffffff'][Math.floor(d.seed * 4)];
     ctx.fillStyle = '#4a9a34'; ctx.fillRect(-1, -14, 3, 14); ctx.fillStyle = c; ctx.fillRect(-5, -20, 10, 8); ctx.fillStyle = '#ffd23f'; ctx.fillRect(-2, -18, 4, 4);
-  } else if (d.kind === 'mushroom') {
-    ctx.fillStyle = '#f2ead8'; ctx.fillRect(-3, -10, 7, 10); ctx.fillStyle = '#e04848'; ctx.fillRect(-9, -18, 18, 9); ctx.fillStyle = '#fff'; ctx.fillRect(-5, -16, 3, 3); ctx.fillRect(3, -15, 3, 3);
-  } else if (d.kind === 'rock') {
-    ctx.fillStyle = '#9a9cab'; ctx.fillRect(-12, -12, 24, 12); ctx.fillStyle = '#b8bac6'; ctx.fillRect(-8, -16, 14, 6);
-  } else if (d.kind === 'shell') {
-    ctx.fillStyle = '#ffb3c6'; ctx.fillRect(-7, -8, 14, 8); ctx.fillStyle = '#ff8fab'; ctx.fillRect(-5, -10, 3, 10); ctx.fillRect(0, -10, 3, 10);
-  } else if (d.kind === 'snowman') {
-    ctx.fillStyle = '#ffffff'; ctx.fillRect(-12, -24, 24, 24); ctx.fillRect(-9, -42, 18, 18); ctx.fillStyle = '#2b2140'; ctx.fillRect(-5, -36, 3, 3); ctx.fillRect(3, -36, 3, 3); ctx.fillStyle = '#ff8a3d'; ctx.fillRect(0, -32, 8, 3);
-  }
-  ctx.restore();
-}
+  },
+  mushroom: () => { ctx.fillStyle = '#f2ead8'; ctx.fillRect(-3, -10, 7, 10); ctx.fillStyle = '#e04848'; ctx.fillRect(-9, -18, 18, 9); ctx.fillStyle = '#fff'; ctx.fillRect(-5, -16, 3, 3); ctx.fillRect(3, -15, 3, 3); },
+  rock: () => { ctx.fillStyle = '#9a9cab'; ctx.fillRect(-12, -12, 24, 12); ctx.fillStyle = '#b8bac6'; ctx.fillRect(-8, -16, 14, 6); },
+  shell: () => { ctx.fillStyle = '#ffb3c6'; ctx.fillRect(-7, -8, 14, 8); ctx.fillStyle = '#ff8fab'; ctx.fillRect(-5, -10, 3, 10); ctx.fillRect(0, -10, 3, 10); },
+  snowman,
+  // seasonal
+  pumpkin: (d, time) => { // a smiling pumpkin lantern
+    const glow = 0.7 + 0.3 * Math.sin(time * 5 + d.seed * 9);
+    ctx.fillStyle = '#4a9a34'; ctx.fillRect(-2, -27, 5, 7); ctx.fillRect(3, -25, 5, 3);
+    ctx.fillStyle = '#e8772e'; ctx.fillRect(-11, -22, 22, 22); ctx.fillRect(-15, -18, 30, 15);
+    ctx.fillStyle = '#c85a1e'; ctx.fillRect(-6, -21, 2, 20); ctx.fillRect(4, -21, 2, 20);
+    ctx.fillStyle = `rgba(255,220,90,${glow})`; ctx.fillRect(-9, -16, 5, 5); ctx.fillRect(4, -16, 5, 5);
+    ctx.fillRect(-7, -7, 14, 3); ctx.fillRect(-10, -9, 3, 3); ctx.fillRect(7, -9, 3, 3);
+  },
+  ghost: (d, time) => { // a cute ghost, floating and smiling
+    const y = Math.round(-38 + Math.sin(time * 2 + d.seed * 6) * 5);
+    ctx.fillStyle = 'rgba(40,30,70,.18)'; ctx.fillRect(-10, -3, 20, 4);
+    ctx.fillStyle = 'rgba(255,255,255,.94)'; ctx.fillRect(-9, y - 18, 18, 4); ctx.fillRect(-13, y - 14, 26, 24);
+    for (let k = 0; k < 4; k++) ctx.fillRect(-13 + k * 7, y + 10, 5, 4);
+    ctx.fillStyle = '#2b2140'; ctx.fillRect(-6, y - 8, 4, 5); ctx.fillRect(3, y - 8, 4, 5); ctx.fillRect(-3, y + 1, 7, 2); ctx.fillRect(-4, y - 1, 2, 2); ctx.fillRect(3, y - 1, 2, 2);
+    ctx.fillStyle = 'rgba(240,130,150,.8)'; ctx.fillRect(-11, y - 1, 4, 3); ctx.fillRect(8, y - 1, 4, 3);
+  },
+  present: d => { // a wrapped present
+    const [box, ribbon] = [['#e23b3b', '#ffd23f'], ['#3fae5a', '#e23b3b'], ['#4dabf7', '#ffffff'], ['#a26bfa', '#ffd23f']][Math.floor(d.seed * 4)];
+    ctx.fillStyle = box; ctx.fillRect(-13, -22, 26, 22); ctx.fillStyle = 'rgba(0,0,0,.14)'; ctx.fillRect(5, -22, 8, 22);
+    ctx.fillStyle = ribbon; ctx.fillRect(-2, -22, 4, 22); ctx.fillRect(-13, -13, 26, 4); ctx.fillRect(-9, -28, 7, 6); ctx.fillRect(2, -28, 7, 6);
+  },
+  xtree: (d, time, leaf) => { // a Christmas tree with twinkly lights and a star
+    pineTree(leaf, TH.snow);
+    [[-40, -66], [-6, -70], [26, -64], [-24, -90], [10, -92], [-14, -112], [8, -114], [-4, -134]].forEach(([x, y], i) => {
+      ctx.fillStyle = BULBS[i % 4]; ctx.globalAlpha = Math.sin(time * 3 + i * 1.9 + d.seed * 5) > -0.3 ? 1 : 0.4; ctx.fillRect(x, y, 6, 6);
+    });
+    ctx.globalAlpha = 1; ctx.fillStyle = '#ffd23f'; ctx.fillRect(-6, -168, 12, 12); ctx.fillRect(-10, -164, 20, 4); ctx.fillRect(-2, -172, 4, 20);
+  },
+  xsnowman: () => { snowman(); ctx.fillStyle = '#e23b3b'; ctx.fillRect(-10, -26, 20, 5); ctx.fillRect(4, -24, 5, 12); ctx.fillStyle = '#2b2140'; ctx.fillRect(-8, -46, 16, 4); ctx.fillRect(-5, -56, 10, 10); },
+};
 function drawStop(i, time) {
   const x = stops[i] + 140 - camX; if (x < -60 || x > W + 60) return;
   const done = i < stopIdx;
@@ -242,32 +307,42 @@ function draw(time) {
     ctx.lineWidth = p.size / 6; ctx.strokeStyle = '#2b2140'; ctx.lineJoin = 'round'; ctx.strokeText(p.text, 0, 0); ctx.fillStyle = p.color; ctx.fillText(p.text, 0, 0);
     ctx.restore();
   });
-  if (TH.snow) { ctx.fillStyle = 'rgba(255,255,255,.85)'; flakes.forEach(f => ctx.fillRect(f.x * W, f.y * GY, f.s, f.s)); }
+  flakes.forEach(f => { ctx.fillStyle = f.c; ctx.fillRect(f.x * W, f.y * GY, f.s, f.s); });
   const bobble = Math.sin(time * 6) * 6;
   if (hint === 'outline' && phase === 'place' && carry) { const bx = pieceBoxScreen(carry.piece); drawPixelArrow(bx.cx, bx.y0 - 14 + bobble); }
   else if (hint && hint.state === 'idle') drawPixelArrow(hint.x, (hint.kind === 'gem' ? hint.y - 30 : hint.y - 86) + bobble);
 }
 // soft scenery behind the menus
-let menuGT = null;
+let menuLook = null;
 function drawMenuBackdrop(time) {
-  TH = THEMES.meadow; if (!menuGT) menuGT = themeTextures(TH); GT = menuGT;
+  if (!menuLook || menuLook.season !== SEASON) { const th = landTheme('meadow'); menuLook = { season: SEASON, th, gt: themeTextures(th) }; }
+  TH = menuLook.th; GT = menuLook.gt;
   camX = time * 30;
   drawSky(time); drawGround();
 }
 
 // ------------------------------------------------------------------ menu canvases
+const PLAIN_CARD = { sky: '#bfe3ff', ground: '#6ec24a', lip: '#86d65e' };
 function renderCard(canvas, who, time) {
   const g = canvas.getContext('2d'); const saved = ctx; ctx = g;
+  const c = SEASON ? SEASON.card : PLAIN_CARD;
   g.setTransform(2, 0, 0, 2, 0, 0); g.imageSmoothingEnabled = false;
-  g.fillStyle = '#bfe3ff'; g.fillRect(0, 0, 170, 150);
-  g.fillStyle = '#6ec24a'; g.fillRect(0, 128, 170, 22); g.fillStyle = '#86d65e'; g.fillRect(0, 128, 170, 5);
+  g.fillStyle = c.sky; g.fillRect(0, 0, 170, 150);
+  g.fillStyle = c.ground; g.fillRect(0, 128, 170, 22); g.fillStyle = c.lip; g.fillRect(0, 128, 170, 5);
+  if (c.prop) cardSeason(c, who, time);
   const o = { face: { eyes: (time * 1000 + (who === 'henry' ? 900 : 0)) % 3100 < 120 ? 'closed' : 'open', mouth: 'smile' } };
   if (who === 'henry') { o.trunkUp = 0.25 + 0.25 * Math.sin(time * 1.6); o.earFlap = Math.sin(time * 2) * 0.08; drawHenry({ x: 78, y: 136, squash: 0 }, time, o); }
   else { o.armR = 0.4 + 0.35 * Math.sin(time * 5); g.save(); g.translate(85, 136); g.scale(0.74, 0.74); drawBob({ x: 0, y: 0, squash: 0 }, time, o); g.restore(); }
   ctx = saved;
 }
+// stars or falling snow behind the hero, and a pumpkin or present beside them
+function cardSeason(c, who, time) {
+  ctx.fillStyle = c.dots;
+  for (let i = 0; i < 14; i++) ctx.fillRect(hash(i, 3) * 170, c.fall ? (hash(i, 4) * 128 + time * (8 + 8 * hash(i, 5))) % 128 : 4 + hash(i, 4) * 60, 2, 2);
+  ctx.save(); ctx.translate(who === 'henry' ? 158 : 146, 132); ctx.scale(0.75, 0.75); DECOS[c.prop]({ seed: who === 'henry' ? 0.3 : 0.1 }, time); ctx.restore();
+}
 function renderPreview(canvas, li, mask) {
-  const L = LEVELS[li], th = THEMES[L.theme], g = canvas.getContext('2d'); const saved = ctx; ctx = g;
+  const L = LEVELS[li], th = landTheme(L.theme), g = canvas.getContext('2d'); const saved = ctx; ctx = g;
   g.setTransform(2, 0, 0, 2, 0, 0); g.imageSmoothingEnabled = false;
   const gr = g.createLinearGradient(0, 0, 0, 100); gr.addColorStop(0, th.sky[0]); gr.addColorStop(1, th.sky[2]); g.fillStyle = gr; g.fillRect(0, 0, 160, 120);
   g.fillStyle = rgb(th.near); g.fillRect(0, 84, 160, 16); g.fillStyle = rgb(th.top); g.fillRect(0, 98, 160, 22); g.fillStyle = rgb(th.dirt); g.fillRect(0, 108, 160, 12);

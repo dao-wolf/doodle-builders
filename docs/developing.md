@@ -23,6 +23,7 @@ css/style.css         all styles
 js/util.js            canvas setup, constants, helpers
 js/content.js         phonics sounds, numbers, spoken lines, the four outposts and their lands
 js/settings.js        grown-up settings (saved in localStorage)
+js/seasons.js         seasonal themes: when Halloween and Christmas show, and how they change the lands and outposts
 js/art.js             pixel textures, outpost blocks, Bob, Mr Henry and the Nibblers
 js/audio.js           sound effects and music (Web Audio, no files)
 js/voice.js           speech: own recordings, then Jenny, then the device voice
@@ -34,10 +35,10 @@ voice/jenny.json      the built-in voice (Jenny (Dioco), made with Piper), one b
 voice/my-voice.json   your voice pack, if you add one (optional)
 tools/voice/          scripts that made jenny.json (see tools/voice/README.md)
 tools/playtest/       automated playthrough and voice studio tests
-docs/                 these guides and the README screenshot
+docs/                 these guides, the README screenshot and the seasonal screenshots
 ```
 
-The scripts load in this order at the bottom of `index.html`, and they share one global scope, so the order matters: `util, content, settings, art, audio, voice, game, render, studio, main`.
+The scripts load in this order at the bottom of `index.html`, and they share one global scope, so the order matters: `util, content, settings, seasons, art, audio, voice, game, render, studio, main`.
 
 ## The `TEXT` and `LEVELS` registries
 
@@ -45,12 +46,16 @@ Every line the game says is listed in `TEXT` in `js/content.js`. Each key is one
 
 The outposts are block lists in `LEVELS` (same file), so new outposts can be added there. Their lands are in `THEMES`, and the difficulty levels are in `DIFF` in `js/settings.js`.
 
+## Seasonal themes
+
+`SEASONS` in `js/seasons.js` lists each season's dates (`from` and `to` as month-day; a window may cross the new year), its changes to each land (merged over `THEMES` by `landTheme()`), and its block re-skins per outpost (`skinOutposts()` sets `skin` and `over` on blocks, by type or by `'column,row'`, without changing any shapes). The costumes are `COSTUMES` in `js/art.js`, and the seasonal scenery is in `DECOS` in `js/render.js`. `seasonOn(date)` is a pure function that says which season, if any, a date falls in. `?season=halloween|christmas|none` and `?date=YYYY-MM-DD` force a look or a date.
+
 ## Testing
 
 ```bash
 pip install -r tools/playtest/requirements.txt
 playwright install chromium
-python tools/playtest/playtest.py              # robot plays four scenarios (phone and desktop, all difficulties)
+python tools/playtest/playtest.py              # robot plays seven scenarios (phone and desktop, all difficulties, Halloween, Christmas and the normal look)
 python tools/playtest/studio_test.py           # voice studio with a pretend microphone
 ```
 
