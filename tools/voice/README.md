@@ -1,6 +1,6 @@
 # Voice tools
 
-These scripts made `voice/jenny.json`, the built-in voice. You only need them to change or add lines; to use your own voice, use the in-game Voice studio instead (see the main README).
+These scripts made `voice/jenny.json`, the built-in voice. You only need them to change or add lines; to use your own voice, use the in-game Voice studio instead (see [docs/grown-ups.md](../../docs/grown-ups.md#record-your-own-voice)).
 
 ```bash
 pip install -r tools/voice/requirements.txt
