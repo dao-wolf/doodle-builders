@@ -19,6 +19,13 @@ class Quiet(http.server.SimpleHTTPRequestHandler):
     def log_message(self, *a): pass
 
 
+class Server(socketserver.ThreadingTCPServer):
+    # a thread per request, so a connection Chromium opens early can't hold up the rest,
+    # and a long enough queue that parallel pages aren't turned away
+    allow_reuse_address = daemon_threads = True
+    request_queue_size = 64
+
+
 async def hold(page, sel, ms):
     b = await page.locator(sel).bounding_box()
     await page.mouse.move(b['x'] + 15, b['y'] + 15); await page.mouse.down(); await page.wait_for_timeout(ms); await page.mouse.up()
@@ -26,7 +33,7 @@ async def hold(page, sel, ms):
 
 async def main(mic_wav):
     os.makedirs(OUT, exist_ok=True)
-    srv = socketserver.TCPServer(('127.0.0.1', PORT), functools.partial(Quiet, directory=ROOT))
+    srv = Server(('127.0.0.1', PORT), functools.partial(Quiet, directory=ROOT))
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     ok = True
     async with async_playwright() as p:
@@ -40,6 +47,7 @@ async def main(mic_wav):
         await page.screenshot(path=f'{OUT}/studio_open.png')
         label = await page.text_content('#recLabel')
         await page.click('#recBtn')
+        await page.wait_for_function('!!ST.rec')  # recording starts once the microphone is ready
         for _ in range(40):
             await page.wait_for_timeout(250)
             if not await page.evaluate('!!ST.rec'): break

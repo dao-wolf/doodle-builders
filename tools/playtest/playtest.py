@@ -35,6 +35,13 @@ class Quiet(http.server.SimpleHTTPRequestHandler):
     def log_message(self, *a): pass
 
 
+class Server(socketserver.ThreadingTCPServer):
+    # a thread per request, so a connection Chromium opens early can't hold up the rest,
+    # and a long enough queue that parallel pages aren't turned away
+    allow_reuse_address = daemon_threads = True
+    request_queue_size = 64
+
+
 async def play(browser, name, w, h, hero, diff, level, move, style):
     page = await browser.new_page(viewport={'width': w, 'height': h}, has_touch=True)
     errors = []
@@ -108,7 +115,7 @@ async def play(browser, name, w, h, hero, diff, level, move, style):
 
 async def main(names):
     os.makedirs(OUT, exist_ok=True)
-    srv = socketserver.TCPServer(('127.0.0.1', PORT), functools.partial(Quiet, directory=ROOT))
+    srv = Server(('127.0.0.1', PORT), functools.partial(Quiet, directory=ROOT))
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     async with async_playwright() as p:
         browser = await p.chromium.launch(args=['--autoplay-policy=no-user-gesture-required'])
