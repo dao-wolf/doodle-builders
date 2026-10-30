@@ -34,7 +34,7 @@ js/main.js            main loop and start-up
 voice/jenny.json      the built-in voice (Jenny (Dioco), made with Piper), one base64 MP3 per clip
 voice/my-voice.json   your voice pack, if you add one (optional)
 tools/voice/          scripts that made jenny.json (see tools/voice/README.md)
-tools/playtest/       automated playthrough and voice studio tests
+tools/playtest/       automated playthrough, voice studio and zero-size tests
 docs/                 these guides, the README screenshot and the seasonal screenshots
 ```
 
@@ -57,11 +57,12 @@ pip install -r tools/playtest/requirements.txt
 playwright install chromium
 python tools/playtest/playtest.py              # robot plays seven scenarios (phone and desktop, all difficulties, Halloween, Christmas and the normal look)
 python tools/playtest/studio_test.py           # voice studio with a pretend microphone
+python tools/playtest/zero_size_test.py        # the game keeps drawing after it starts with no window size
 ```
 
-Both scripts start their own local server, which serves the game under `/doodle-builders/` as GitHub Pages does. They fail on a page error or any file the game needs that doesn't load. Screenshots and the exported test voice pack go to `tools/playtest/out/`.
+Each script starts its own local server, which serves the game under `/doodle-builders/` as GitHub Pages does. They fail on a page error or any file the game needs that doesn't load. Screenshots and the exported test voice pack go to `tools/playtest/out/`.
 
-Every pull request runs both on GitHub Actions (`.github/workflows/playtests.yml`). If they fail, `tools/playtest/out/` is attached to the run as `playtest-out`.
+Every pull request runs all three on GitHub Actions (`.github/workflows/playtests.yml`). If they fail, `tools/playtest/out/` is attached to the run as `playtest-out`.
 
 ## Code quality
 
@@ -73,7 +74,7 @@ Every change goes through a pull request. A ruleset on `main` lets a pull reques
 
 | Check | From | What it checks |
 |---|---|---|
-| Robot playtests | GitHub Actions | both playtests |
+| Robot playtests | GitHub Actions | all three playtests |
 | CodeScene Code Health Review (main) | CodeScene | the Code Health of the changed code |
 | Socket Security: Pull Request Alerts | Socket | any package the pull request adds or changes |
 
