@@ -29,13 +29,17 @@ jobs:
           pip install -r tools/playtest/requirements.txt
           playwright install --with-deps chromium
 
-      # Both scripts start their own local server.
-      - name: Game playtest (seven scenarios and the zero-size check)
+      # Each script starts its own local server.
+      - name: Game playtest (seven scenarios)
         run: python tools/playtest/playtest.py
 
       - name: Voice studio test
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: python tools/playtest/studio_test.py
+
+      - name: Zero-size start test
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: python tools/playtest/zero_size_test.py
 
       - name: Upload screenshots
         if: failure()

@@ -7,13 +7,10 @@ outpost isn't finished, the page throws an error, a file the game needs doesn't 
 holding the gear button doesn't pause the game or tapping the ground doesn't walk the hero.
 The seasonal scenarios force a look with ?season= or ?date=, and fail if the start screen shows the wrong look
 or its picture button doesn't switch the look off and on.
-The zero-size check loads the game with no window size (a hidden frame, or a phone web view before layout),
-then gives it one, and fails if the game stops drawing or the page throws an error.
 
     pip install playwright && playwright install chromium
     python tools/playtest/playtest.py                 # all scenarios
     python tools/playtest/playtest.py phone-manual    # one scenario
-    python tools/playtest/playtest.py zero-size       # just the zero-size check
 """
 import asyncio, os, sys, time
 from playwright.async_api import async_playwright
@@ -144,34 +141,17 @@ async def play(browser, name, w, h, hero, diff, level, move, style, season=('', 
     return st['fin'] and not errors
 
 
-async def zero_size(browser):
-    """Loads the game with no window size, then gives it one: the game must keep drawing, with no errors."""
-    page = await browser.new_page(viewport={'width': 0, 'height': 0})
-    errors = []
-    localsite.watch(page, errors, PORT, 'zero-size')
-    await page.goto(f'{localsite.address(PORT)}index.html'); await page.wait_for_timeout(800)
-    await page.set_viewport_size({'width': 390, 'height': 844}); await page.wait_for_timeout(800)
-    t = await page.evaluate('last'); await page.wait_for_timeout(400)
-    if await page.evaluate('last') == t: errors.append('the game stopped drawing')
-    await page.screenshot(path=f'{OUT}/zero-size_title.png')
-    print(f'zero-size: errors={errors[:3]}')
-    await page.close()
-    return not errors
-
-CHECKS = {'zero-size': zero_size}  # name: a check that isn't a playthrough
-
-
 async def main(names):
     os.makedirs(OUT, exist_ok=True)
     srv = localsite.serve(PORT)
     async with async_playwright() as p:
         browser = await p.chromium.launch(args=['--autoplay-policy=no-user-gesture-required'])
-        results = await asyncio.gather(*[CHECKS[n](browser) if n in CHECKS else play(browser, n, *SCENARIOS[n]) for n in names])
+        results = await asyncio.gather(*[play(browser, n, *SCENARIOS[n]) for n in names])
         await browser.close()
     srv.shutdown()
     return all(results)
 
 if __name__ == '__main__':
-    picked = sys.argv[1:] or list(SCENARIOS) + list(CHECKS)
+    picked = sys.argv[1:] or list(SCENARIOS)
     ok = asyncio.run(main(picked))
     sys.exit(0 if ok else 1)
