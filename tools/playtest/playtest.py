@@ -28,6 +28,8 @@ SCENARIOS = {  # name: (width, height, hero, difficulty, level, movement, style[
     'halloween': (390, 844, 'henry', 'medium', 0, 'manual', 'lazy', ('season=halloween', 'halloween')),
     'christmas': (1280, 720, 'bob', 'easy', 3, 'auto', 'defend', ('date=2026-12-24', 'christmas')),
     'normal-look': (1280, 720, 'henry', 'easy', 2, 'auto', 'defend', ('season=none', '')),
+    'dragon-christmas': (390, 844, 'dragon', 'medium', 1, 'manual', 'defend', ('date=2026-12-24', 'christmas')),
+    'dragon-halloween': (1280, 720, 'dragon', 'hard', 3, 'auto', 'lazy', ('season=halloween', 'halloween')),
 }
 
 STATE = '''() => ({ phase, type: round && round.type, target: round && round.target, SC, status: status.slice(), GY, camX,

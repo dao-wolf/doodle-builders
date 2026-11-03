@@ -226,43 +226,60 @@ function drawPixelArrow(x, y) {
   ctx.fillStyle = '#ff4d8d'; ctx.strokeStyle = '#2b2140'; ctx.lineWidth = 3;
   ctx.beginPath(); ctx.moveTo(x - 8, y - 30); ctx.lineTo(x + 8, y - 30); ctx.lineTo(x + 8, y - 14); ctx.lineTo(x + 18, y - 14); ctx.lineTo(x, y); ctx.lineTo(x - 18, y - 14); ctx.lineTo(x - 8, y - 14); ctx.closePath(); ctx.fill(); ctx.stroke();
 }
+// How each hero is drawn and moves. shadow is [x offset when facing right, half-width]; turns: flips to walk back.
+// The pose functions tweak the shared pose for each moment: walking, in the air, happy, the action (charge, then blow),
+// looking at something, and the end-of-level dance.
+const LOOKS = {
+  bob: { draw: drawBob, shadow: [0, 44], turns: false,
+    walk: (o, sw) => { o.legL = sw; o.legR = -sw; o.armL = 0.15 - sw * 0.6; o.armR = 0.15 + sw * 0.6; },
+    air: o => { o.armL = o.armR = 1.9; o.legL = 0.3; o.legR = -0.3; o.antAmp = 1.2; },
+    happy: (o, time) => { o.armL = o.armR = 2.4 + Math.sin(time * 18) * 0.25; o.antAmp = 1.4; },
+    charge: (o, k) => { o.headDy = -6 * k; o.sy = 1 + 0.07 * k; o.face = { eyes: 'squint', mouth: 'O', mouthR: 3 + 4 * k }; o.armL = o.armR = 0.4 + 0.4 * k; },
+    blow: (o, k) => { o.face = { eyes: 'squint', mouth: 'open' }; o.armL = o.armR = 0.9; o.sy = 1 - 0.12 * k; o.sx = 1 + 0.1 * k; },
+    look: (o, dx, dy) => { o.face.pupils = [[dx, dy], [dx, dy]]; },
+    dance: (o, p) => { o.armL = 1.4 + p; o.armR = 1.4 - p; o.legL = 0.35 * Math.max(0, p); o.legR = 0.35 * Math.max(0, -p); o.headTilt = 0.15 * p; o.antAmp = 1.6; } },
+  henry: { draw: drawHenry, shadow: [5, 64], turns: true,
+    walk: (o, sw) => { o.legSw = sw * 0.7; o.trunkUp = 0; },
+    air: o => { o.trunkUp = 0.6; o.legSw = 0.3; o.earFlap = -0.3; },
+    happy: (o, time) => { o.trunkUp = 1; o.earFlap = Math.sin(time * 14) * 0.2; },
+    charge: (o, k) => { o.tailUp = k; o.face = { eyes: 'squint', mouth: 'puff' }; o.sx = 1 + 0.05 * k; o.sy = 1 - 0.04 * k; o.legSw = 0.12 * k; },
+    blow: (o, k) => { o.tailUp = 1; o.face = { eyes: 'squint', mouth: 'grin' }; o.sx = 1 - 0.06 * k; o.rot = -0.05 * k; o.trunkUp = 0.5; },
+    look: (o, dx, dy) => { o.face.pupil = [dx * (hero.face || 1), dy]; },
+    dance: (o, p) => { o.trunkUp = 0.6 + 0.4 * p; o.legSw = 0.3 * p; o.earFlap = 0.25 * p; } },
+  dragon: { draw: drawDragon, shadow: [4, 48], turns: true, lift: dragonHover,
+    walk: (o, sw) => { o.legSw = sw * 0.5; o.flap = Math.abs(sw) * 0.4; },
+    air: o => { o.flap = 0.45; o.legSw = 0.25; },
+    happy: (o, time) => { o.flap = 0.3 + Math.sin(time * 14) * 0.15; o.wave = 1; },
+    charge: (o, k) => { o.face = { eyes: 'squint', mouth: 'puff' }; o.headTilt = -0.12 * k; o.sy = 1 + 0.05 * k; },
+    blow: (o, k) => { o.face = { eyes: 'squint', mouth: 'open' }; o.headTilt = 0.1 * k; o.flap = 0.3 * k; o.sx = 1 + 0.04 * k; },
+    look: (o, dx, dy) => { o.face.pupil = [dx * (hero.face || 1) * 0.6, dy * 0.6]; },
+    dance: (o, p) => { o.flap = 0.35 * p; o.legSw = 0.25 * p; o.wave = 1; o.headTilt = 0.08 * p; } },
+};
 function heroPose(time) {
-  const blink = (time * 1000) % 3100 < 120, henry = S.char === 'henry';
+  const L = LOOKS[S.char], blink = (time * 1000) % 3100 < 120;
   const o = { face: { eyes: 'open', mouth: 'smile' } };
-  const sw = Math.sin(hero.walkPh) * hero.legAmp;
-  if (henry) { o.legSw = sw * 0.7; o.trunkUp = 0; } else { o.legL = sw; o.legR = -sw; o.armL = 0.15 - sw * 0.6; o.armR = 0.15 + sw * 0.6; }
-  if (!hero.onGround && !hero.dance) { o.face.mouth = 'O'; if (henry) { o.trunkUp = 0.6; o.legSw = 0.3; o.earFlap = -0.3; } else { o.armL = o.armR = 1.9; o.legL = 0.3; o.legR = -0.3; o.antAmp = 1.2; } }
-  if (hero.happyT > 0) { o.face.mouth = 'grin'; if (henry) { o.trunkUp = 1; o.earFlap = Math.sin(time * 14) * 0.2; } else { o.armL = o.armR = 2.4 + Math.sin(time * 18) * 0.25; o.antAmp = 1.4; } }
+  L.walk(o, Math.sin(hero.walkPh) * hero.legAmp);
+  if (!hero.onGround && !hero.dance) { o.face.mouth = 'O'; L.air(o); }
+  if (hero.happyT > 0) { o.face.mouth = 'grin'; L.happy(o, time); }
   if (hero.wrongT > 0) { o.face.mouth = 'O'; o.face.mouthR = 3; o.headTilt = Math.sin(time * 30) * 0.08; }
-  if (hero.actT > 0) {
-    if (!hero.acted) {
-      const k = 1 - (hero.actT - 0.5) / 0.4;
-      if (henry) { o.tailUp = k; o.face = { eyes: 'squint', mouth: 'puff' }; o.sx = 1 + 0.05 * k; o.sy = 1 - 0.04 * k; o.legSw = 0.12 * k; }
-      else { o.headDy = -6 * k; o.sy = 1 + 0.07 * k; o.face = { eyes: 'squint', mouth: 'O', mouthR: 3 + 4 * k }; o.armL = o.armR = 0.4 + 0.4 * k; }
-    } else {
-      const k = hero.actT / 0.5;
-      if (henry) { o.tailUp = 1; o.face = { eyes: 'squint', mouth: 'grin' }; o.sx = 1 - 0.06 * k; o.rot = -0.05 * k; o.trunkUp = 0.5; }
-      else { o.face = { eyes: 'squint', mouth: 'open' }; o.armL = o.armR = 0.9; o.sy = 1 - 0.12 * k; o.sx = 1 + 0.1 * k; }
-    }
-  }
-  const target = phase === 'place' && carry ? [carry.x, carry.y] : (nibs.find(activeNib) ? [nibs.find(activeNib).x - camX, GY - 30] : (items.length && (phase === 'ask' || phase === 'bask') ? [items[0].x, items[0].y - 40] : null));
-  if (target && hero.actT <= 0) {
-    const dx = clamp((target[0] - heroSX()) / 30, -5, 5), dy = clamp((target[1] - (hero.y - 100)) / 40, -4, 4);
-    if (henry) o.face.pupil = [dx * (hero.face || 1), dy]; else o.face.pupils = [[dx, dy], [dx, dy]];
-  }
-  if (hero.dance) { const p = Math.sin(time * Math.PI * 4); o.face = { eyes: blink ? 'closed' : 'open', mouth: 'grin' }; o.rot = 0.06 * p;
-    if (henry) { o.trunkUp = 0.6 + 0.4 * p; o.legSw = 0.3 * p; o.earFlap = 0.25 * p; } else { o.armL = 1.4 + p; o.armR = 1.4 - p; o.legL = 0.35 * Math.max(0, p); o.legR = 0.35 * Math.max(0, -p); o.headTilt = 0.15 * p; o.antAmp = 1.6; } }
+  if (hero.actT > 0) { if (hero.acted) L.blow(o, hero.actT / 0.5); else L.charge(o, 1 - (hero.actT - 0.5) / 0.4); }
+  const target = heroTarget();
+  if (target && hero.actT <= 0) L.look(o, clamp((target[0] - heroSX()) / 30, -5, 5), clamp((target[1] - (hero.y - 100)) / 40, -4, 4));
+  if (hero.dance) { const p = Math.sin(time * Math.PI * 4); o.face = { eyes: blink ? 'closed' : 'open', mouth: 'grin' }; o.rot = 0.06 * p; L.dance(o, p); }
   if (blink && o.face.eyes === 'open') o.face.eyes = 'closed';
   return o;
 }
+function heroTarget() { // what the hero looks at: the piece to place, a Nibbler, or the first answer
+  if (phase === 'place' && carry) return [carry.x, carry.y];
+  const n = nibs.find(activeNib);
+  if (n) return [n.x - camX, GY - 30];
+  return items.length && (phase === 'ask' || phase === 'bask') ? [items[0].x, items[0].y - 40] : null;
+}
 function drawHero(time) {
-  const b = { x: heroSX(), y: hero.y, squash: hero.squash };
-  const f = hero.face || 1;
-  drawShadow(b.x + (S.char === 'henry' ? 5 * f : 0), GY - hero.y, S.char === 'henry' ? 64 : 44);
-  if (S.char === 'henry') {
-    ctx.save(); if (f < 0) { ctx.translate(b.x, 0); ctx.scale(-1, 1); ctx.translate(-b.x, 0); } // Mr Henry turns round to walk back
-    drawHenry(b, time, heroPose(time)); ctx.restore();
-  } else drawBob(b, time, heroPose(time));
+  const b = { x: heroSX(), y: hero.y, squash: hero.squash }, L = LOOKS[S.char], f = hero.face || 1;
+  drawShadow(b.x + L.shadow[0] * f, GY - hero.y + (L.lift ? L.lift(time) : 0), L.shadow[1]);
+  ctx.save(); if (L.turns && f < 0) { ctx.translate(b.x, 0); ctx.scale(-1, 1); ctx.translate(-b.x, 0); } // side-on heroes turn round to walk back
+  L.draw(b, time, heroPose(time)); ctx.restore();
 }
 function draw(time) {
   ctx.setTransform(SC * DPR, 0, 0, SC * DPR, 0, 0);
@@ -323,6 +340,11 @@ function drawMenuBackdrop(time) {
 
 // ------------------------------------------------------------------ menu canvases
 const PLAIN_CARD = { sky: '#bfe3ff', ground: '#6ec24a', lip: '#86d65e' };
+const CARD_POSE = { // each hero on its start-screen card: at [x, y, scale], when it blinks, its idle move, and where the seasonal prop goes [x, seed]
+  bob: { at: [85, 136, 0.74], blink: 0, prop: [146, 0.1], idle: (o, time) => { o.armR = 0.4 + 0.35 * Math.sin(time * 5); } },
+  henry: { at: [78, 136, 1], blink: 900, prop: [158, 0.3], idle: (o, time) => { o.trunkUp = 0.25 + 0.25 * Math.sin(time * 1.6); o.earFlap = Math.sin(time * 2) * 0.08; } },
+  dragon: { at: [76, 134, 0.88], blink: 1700, prop: [152, 0.5], idle: (o, time) => { o.flap = 0.12 + 0.12 * Math.sin(time * 3); o.hover = 8 + 3 * Math.sin(time * 2.6); } },
+};
 function renderCard(canvas, who, time) {
   const g = canvas.getContext('2d'); const saved = ctx; ctx = g;
   const c = SEASON ? SEASON.card : PLAIN_CARD;
@@ -330,16 +352,18 @@ function renderCard(canvas, who, time) {
   g.fillStyle = c.sky; g.fillRect(0, 0, 170, 150);
   g.fillStyle = c.ground; g.fillRect(0, 128, 170, 22); g.fillStyle = c.lip; g.fillRect(0, 128, 170, 5);
   if (c.prop) cardSeason(c, who, time);
-  const o = { face: { eyes: (time * 1000 + (who === 'henry' ? 900 : 0)) % 3100 < 120 ? 'closed' : 'open', mouth: 'smile' } };
-  if (who === 'henry') { o.trunkUp = 0.25 + 0.25 * Math.sin(time * 1.6); o.earFlap = Math.sin(time * 2) * 0.08; drawHenry({ x: 78, y: 136, squash: 0 }, time, o); }
-  else { o.armR = 0.4 + 0.35 * Math.sin(time * 5); g.save(); g.translate(85, 136); g.scale(0.74, 0.74); drawBob({ x: 0, y: 0, squash: 0 }, time, o); g.restore(); }
+  const C = CARD_POSE[who], [x, y, s] = C.at;
+  const o = { face: { eyes: (time * 1000 + C.blink) % 3100 < 120 ? 'closed' : 'open', mouth: 'smile' } };
+  C.idle(o, time);
+  g.save(); g.translate(x, y); g.scale(s, s); LOOKS[who].draw({ x: 0, y: 0, squash: 0 }, time, o); g.restore();
   ctx = saved;
 }
 // stars or falling snow behind the hero, and a pumpkin or present beside them
 function cardSeason(c, who, time) {
   ctx.fillStyle = c.dots;
   for (let i = 0; i < 14; i++) ctx.fillRect(hash(i, 3) * 170, c.fall ? (hash(i, 4) * 128 + time * (8 + 8 * hash(i, 5))) % 128 : 4 + hash(i, 4) * 60, 2, 2);
-  ctx.save(); ctx.translate(who === 'henry' ? 158 : 146, 132); ctx.scale(0.75, 0.75); DECOS[c.prop]({ seed: who === 'henry' ? 0.3 : 0.1 }, time); ctx.restore();
+  const [x, seed] = CARD_POSE[who].prop;
+  ctx.save(); ctx.translate(x, 132); ctx.scale(0.75, 0.75); DECOS[c.prop]({ seed }, time); ctx.restore();
 }
 function renderPreview(canvas, li, mask) {
   const L = LEVELS[li], th = landTheme(L.theme), g = canvas.getContext('2d'); const saved = ctx; ctx = g;

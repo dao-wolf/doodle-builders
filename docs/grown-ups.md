@@ -24,8 +24,8 @@ The game dresses up for the seasons, then goes back to normal:
 
 | Season | Shown | What changes |
 |---|---|---|
-| Halloween | 15 October to 3 November | Dusk sky with a moon, stars and friendly bats; falling leaves; pumpkins and cute ghosts; pumpkin lanterns, cobwebs and a ghost at the lighthouse window; Bob in a witch hat, Mr Henry in a cape, Nibblers in ghost sheets |
-| Christmas | 4 November to 6 January | Snow; Christmas trees, presents and snowmen in scarves; snowy roofs, wreaths and fairy lights on the outposts; Bob in a Santa hat, Mr Henry in antlers and a scarf, Nibblers in elf hats |
+| Halloween | 15 October to 3 November | Dusk sky with a moon, stars and friendly bats; falling leaves; pumpkins and cute ghosts; pumpkin lanterns, cobwebs and a ghost at the lighthouse window; Bob in a witch hat, Mr Henry in a cape, Dragon Fly with a pumpkin bucket and its pilot in a witch hat, Nibblers in ghost sheets |
+| Christmas | 4 November to 6 January | Snow; Christmas trees, presents and snowmen in scarves; snowy roofs, wreaths and fairy lights on the outposts; Bob in a Santa hat, Mr Henry in antlers and a scarf, Dragon Fly in fairy lights and its pilot in a Santa hat, Nibblers in elf hats |
 
 While a season is on, a big picture button (a pumpkin or a Christmas tree) sits on the corner of the start screen, so children can switch the look off and back on without reading. It starts on each time a season begins. In the settings, **Seasonal themes** chooses how the look is picked:
 

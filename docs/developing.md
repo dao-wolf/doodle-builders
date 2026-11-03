@@ -24,7 +24,7 @@ js/util.js            canvas setup, constants, helpers
 js/content.js         phonics sounds, numbers, spoken lines, the four outposts and their lands
 js/settings.js        grown-up settings (saved in localStorage)
 js/seasons.js         seasonal themes: when Halloween and Christmas show, and how they change the lands and outposts
-js/art.js             pixel textures, outpost blocks, Bob, Mr Henry and the Nibblers
+js/art.js             pixel textures, outpost blocks, the heroes (Bob, Mr Henry, Dragon Fly) and the Nibblers
 js/audio.js           sound effects and music (Web Audio, no files)
 js/voice.js           speech: own recordings, then Jenny, then the device voice
 js/game.js            game rules: journey, questions, Nibblers, building, input, update loop
@@ -46,6 +46,22 @@ Every line the game says is listed in `TEXT` in `js/content.js`. Each key is one
 
 The outposts are block lists in `LEVELS` (same file), so new outposts can be added there. Their lands are in `THEMES`, and the difficulty levels are in `DIFF` in `js/settings.js`.
 
+## Adding a hero
+
+Each hero is drawn in code, with no image files. Everything that differs between heroes sits in one table per file, keyed by the hero's id (`bob`, `henry`, `dragon`), so a new hero is a drawing plus a row in each table:
+
+| Where | What to add |
+|---|---|
+| `js/art.js` | a `drawX(b, time, o)` function, facing right, and any seasonal outfits in `COSTUMES` (drawn by `wear()`) |
+| `js/render.js` | `LOOKS`: the drawing, its shadow and its poses; `CARD_POSE`: how it sits on its start-screen card |
+| `js/game.js` | `HEROES`: its name, action button, how close Nibblers get, footstep sound, tap area and action (`charge`, then `blow`) |
+| `js/audio.js` | any new sounds in `SFX` |
+| `js/content.js` | its lines `hi_<id>` and `nib_<id>` in `TEXT`, then Jenny clips for them with `tools/voice/add_lines.py` |
+| `index.html`, `css/style.css` | a `.char` button on the start screen, and the action button's colour (`#actBtn[data-hero="<id>"]`) |
+| `tools/playtest/` | a scenario in `playtest.py` that plays as the hero, and the id in `perf_report.py`'s `--hero` choices |
+
+Draw from photos of the original drawing or model, but keep the photos out of the repository: it is public.
+
 ## Seasonal themes
 
 `SEASONS` in `js/seasons.js` lists each season's dates (`from` and `to` as month-day; a window may cross the new year), its changes to each land (merged over `THEMES` by `landTheme()`), and its block re-skins per outpost (`skinOutposts()` sets `skin` and `over` on blocks, by type or by `'column,row'`, without changing any shapes). The costumes are `COSTUMES` in `js/art.js`, and the seasonal scenery is in `DECOS` in `js/render.js`. `seasonOn(date)` is a pure function that says which season, if any, a date falls in. `?season=halloween|christmas|none` and `?date=YYYY-MM-DD` force a look or a date.
@@ -55,7 +71,7 @@ The outposts are block lists in `LEVELS` (same file), so new outposts can be add
 ```bash
 pip install -r tools/playtest/requirements.txt
 playwright install chromium
-python tools/playtest/playtest.py              # robot plays seven scenarios (phone and desktop, all difficulties, Halloween, Christmas and the normal look)
+python tools/playtest/playtest.py              # robot plays nine scenarios (phone and desktop, all difficulties, every hero, Halloween, Christmas and the normal look)
 python tools/playtest/studio_test.py           # voice studio with a pretend microphone
 python tools/playtest/zero_size_test.py        # the game keeps drawing after it starts with no window size
 python tools/playtest/perf_test.py             # performance guard: frame rate, canvas size, music and hidden-page sound
@@ -79,6 +95,7 @@ The game repaints its whole screen every frame, so how often it draws and how ma
 python tools/playtest/perf_report.py                   # Chromium: fps, main-thread busy % and canvas size, phone and tablet
 python tools/playtest/perf_report.py --engine webkit   # WebKit, Safari's engine: iPhone 15 and iPad Pro 11 presets
 python tools/playtest/perf_report.py --slow 4          # Chromium with the CPU slowed down 4 times
+python tools/playtest/perf_report.py --hero dragon     # play as another hero (default Bob)
 ```
 
 Headless Chromium paints on the CPU, so "busy %" overstates what a real device's graphics chip does, but it shows which way a change moves the cost. The WebKit mode is the stand-in for iPhones and iPads: it runs Safari's engine with Playwright's device presets and reports the CPU time of WebKit's web content and GPU processes (read with `ps`, on macOS). Neither counts the graphics chip's own drawing. On 3 Nov 2026 the WebKit mode gave the same picture as Safari in the iOS Simulator, so there's no need to install the simulator (about 8 GB) for these checks. The report isn't run in CI, because the numbers depend on the machine.

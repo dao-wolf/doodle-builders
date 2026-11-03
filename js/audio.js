@@ -56,6 +56,9 @@ const SFX = {
     o.start(t0); lfo.start(t0); o.stop(t0 + d + 0.05); lfo.stop(t0 + d + 0.05);
     noise(0.35, 0.12, 400, 0.04);
   },
+  inhale: () => tone(180, 0.38, 'triangle', 0.12, 420), // Dragon Fly breathing in
+  fire: () => { noise(0.7, 0.75, 1400); noise(0.45, 0.35, 5000, 0.08); tone(95, 0.55, 'sawtooth', 0.16, 55); },
+  whirr: () => tone(150, 0.1, 'sine', 0.05, 190), // Dragon Fly's motor as it floats along
   whee: () => tone(500, 0.6, 'square', 0.06, 1800), nibble: () => { noise(0.05, 0.22, 4000); noise(0.05, 0.18, 4000, 0.09); },
   dig: () => { noise(0.18, 0.3, 900); tone(200, 0.15, 'triangle', 0.15, 500); },
   build: () => tone(rand(500, 800), 0.06, 'square', 0.07),

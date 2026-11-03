@@ -1,4 +1,4 @@
-// Pixel textures, outpost blocks and the two heroes (Bob and Mr Henry) plus the Nibblers.
+// Pixel textures, outpost blocks and the three heroes (Bob, Mr Henry and Dragon Fly) plus the Nibblers.
 'use strict';
 
 // ------------------------------------------------------------------ textures
@@ -238,6 +238,94 @@ function drawHenry(b, time, o = {}) {
   ctx.restore();
   ctx.restore();
 }
+// Dragon Fly: a robot dragon a child built from toy bricks, with a little pilot on its back. Drawn side-on, facing the way
+// it flies (right). It floats, so it is drawn a little way above the ground.
+const DF = { red: '#d8332d', coral: '#f47b5e', blue: '#2373bd', sky: '#5ec4de', ink: '#26262c', grey: '#5a5f66', yellow: '#f6c733',
+  lilac: '#b9a5de', mint: '#c3ebe4', white: '#f3f3ee', brown: '#7b4a2a', shirt: '#5e9ad6', skin: '#c68b5b', hair: '#1e1a1a' };
+const DF_SCALE = 0.85;
+const DF_BODY = [ // the stacked bricks of its body, bottom row first: [x, y, w, h], colour, studs
+  [[-30, -40, 20, 14], 'lilac'], [[-10, -40, 22, 14], 'white'], [[-30, -54, 20, 14], 'mint'], [[-10, -54, 22, 14], 'yellow'],
+  [[-30, -68, 24, 14], 'grey'], [[-6, -68, 36, 14], 'blue'], [[-30, -84, 60, 16], 'red', 4],
+];
+const dragonHover = time => 16 + 4 * Math.sin(time * 2.6);
+function brick([x, y, w, h], col, studs = 0) { // a toy brick, with its studs along the top
+  ctx.fillStyle = col; ctx.fillRect(x, y, w, h);
+  for (let k = 0; k < studs; k++) ctx.fillRect(x + (k + 0.5) * w / studs - 3, y - 3, 6, 3);
+  ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.fillRect(x, y, w, 2);
+  ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.fillRect(x, y + h - 3, w, 3);
+}
+function drawDragon(b, time, o = {}) {
+  dragonFrame(b, o, o.hover == null ? dragonHover(time) : o.hover);
+  const dangle = Math.sin(time * 2.6) * 0.06;
+  [[-16, DF.blue, 1], [16, DF.red, -1]].forEach(([x, col, k]) => dragonLeg(x, col, (o.legSw || 0) * k + dangle));
+  DF_BODY.forEach(([r, col, studs]) => brick(r, DF[col], studs));
+  dragonDoor();
+  const flap = (o.flap || 0) + Math.sin(time * 5) * 0.07;
+  [-1, 1].forEach(side => dragonWing(side, flap));
+  wear('dragonBody', time);
+  dragonPilot(time, o.wave || 0);
+  brick([-2, -92, 46, 8], DF.ink, 6); brick([40, -100, 40, 16], DF.blue, 4); // the long black neck, into a blue brick
+  wear('dragonNeck', time);
+  ctx.save(); ctx.translate(52, -100); ctx.rotate(o.headTilt || 0); ctx.translate(-52, 100); // nods from where it joins the neck
+  dragonHead(o.face || {});
+  ctx.restore();
+  ctx.restore();
+}
+function dragonFrame(b, o, hover) { // stands the dragon at b, floating, and squashed or tilted by the pose
+  const sq = b.squash || 0, sy = (o.sy || 1) * (1 - sq), sx = (o.sx || 1) * (1 + sq * 0.7);
+  ctx.save(); ctx.translate(b.x, b.y - hover); ctx.rotate(o.rot || 0); ctx.scale(sx * DF_SCALE, sy * DF_SCALE);
+}
+function dragonLeg(x, col, a) { // a leg dangling under the body, with a flat brick for a foot
+  ctx.save(); ctx.translate(x, -30); ctx.rotate(a);
+  brick([-13, 18, 26, 12], col, 2); brick([-7, 0, 14, 20], col);
+  ctx.restore();
+}
+function dragonDoor() { ctx.fillStyle = DF.brown; ctx.fillRect(12, -54, 18, 28); ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.fillRect(12, -54, 18, 2); ctx.fillRect(20, -52, 2, 26); ctx.fillStyle = DF.yellow; ctx.fillRect(14, -42, 3, 3); }
+function dragonWing(side, flap) { // a red brick arm with a curved sky-blue brick on the end
+  ctx.save(); ctx.translate(side * 28, -76); ctx.scale(side, 1); ctx.rotate(-flap);
+  brick([0, -6, 30, 12], DF.red, 3);
+  ctx.fillStyle = DF.sky; ctx.fillRect(31, -15, 6, 3); ctx.fillRect(42, -15, 6, 3);
+  steps([[26, -12, 26], [26, -8, 26], [26, -4, 25], [27, 0, 23], [29, 4, 18]], 4);
+  ctx.fillStyle = 'rgba(255,255,255,.3)'; ctx.fillRect(26, -12, 26, 2);
+  ctx.restore();
+}
+function dragonPilot(time, wave) { // the little pilot sitting on its back, arms up
+  ctx.fillStyle = '#9aa0a8'; ctx.fillRect(-20, -92, 16, 8);
+  ctx.fillStyle = DF.shirt; ctx.fillRect(-25, -108, 13, 18);
+  ctx.save(); ctx.translate(-15, -104); ctx.rotate(-2.5 + Math.sin(time * (wave ? 14 : 2)) * (0.15 + wave * 0.3));
+  ctx.fillRect(-2, 0, 5, 12); ctx.fillStyle = DF.skin; ctx.fillRect(-2, 12, 5, 4);
+  ctx.restore();
+  ctx.fillStyle = DF.skin; ctx.fillRect(-25, -121, 14, 13);
+  ctx.fillStyle = DF.hair; ctx.fillRect(-26, -125, 16, 6); ctx.fillRect(-26, -121, 4, 7);
+  ctx.fillStyle = '#221a1e'; ctx.fillRect(-15, -117, 2, 3); ctx.fillRect(-16, -111, 4, 2);
+  wear('dragonPilot', time);
+}
+function dragonHead(f) { // a red jaw, a coral brick with a 0 on it, and a sloped red snout on top
+  brick([52, -114, 28, 14], DF.red); brick([52, -138, 28, 24], DF.coral);
+  ctx.fillStyle = '#8a3f9e'; ctx.fillRect(60, -133, 12, 16); ctx.fillRect(62, -135, 8, 20);
+  ctx.fillStyle = DF.red; ctx.fillRect(62, -133, 8, 16); ctx.fillStyle = DF.coral; ctx.fillRect(64, -130, 4, 10);
+  ctx.fillStyle = DF.red; ctx.beginPath(); ctx.moveTo(52, -152); ctx.lineTo(70, -152); ctx.lineTo(80, -146); ctx.lineTo(80, -138); ctx.lineTo(52, -138); ctx.fill();
+  ctx.fillRect(55, -155, 6, 3); ctx.fillRect(63, -155, 6, 3);
+  ctx.fillStyle = 'rgba(255,255,255,.22)'; ctx.fillRect(52, -152, 18, 2);
+  dragonEye(f); dragonMouth(f);
+}
+function dragonEye(f) {
+  const ex = 63, ey = -149, ink = '#221a1e', e = f.eyes || 'open';
+  if (e === 'open') {
+    ctx.fillStyle = '#fafafa'; ctx.fillRect(ex, ey, 9, 9);
+    const p = f.pupil || [0, 0], px = clamp(ex + 5 + p[0], ex + 2, ex + 7), py = clamp(ey + 5 + p[1], ey + 2.5, ey + 6.5);
+    ctx.fillStyle = ink; ctx.fillRect(px - 2, py - 2.5, 4, 5); ctx.fillStyle = '#fff'; ctx.fillRect(px - 1, py - 1.5, 1, 1);
+  } else if (e === 'closed') { ctx.fillStyle = ink; ctx.fillRect(ex, ey + 4, 9, 2); }
+  else { ctx.strokeStyle = ink; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(ex + 1, ey + 1); ctx.lineTo(ex + 8, ey + 4); ctx.lineTo(ex + 1, ey + 7); ctx.stroke(); }
+}
+const DF_MOUTH = { // at the front of the snout; an open mouth glows with fire
+  smile: () => { ctx.fillRect(70, -141, 10, 2); ctx.fillRect(68, -143, 2, 2); },
+  grin: () => { ctx.fillRect(68, -143, 12, 5); ctx.fillStyle = '#fafafa'; ctx.fillRect(70, -143, 10, 2); },
+  open: () => { ctx.fillRect(68, -144, 12, 8); ctx.fillStyle = '#ffb347'; ctx.fillRect(71, -140, 9, 3); },
+  O: f => { const r = f.mouthR || 5; ctx.fillRect(75 - r / 2, -144, r, r); },
+  puff: () => ctx.fillRect(72, -141, 8, 2),
+};
+function dragonMouth(f) { ctx.fillStyle = '#221a1e'; (DF_MOUTH[f.mouth] || DF_MOUTH.smile)(f); }
 function drawNib(n, x, y, time) {
   ctx.save(); ctx.translate(x, y); ctx.rotate(n.rot || 0);
   const k = n.state === 'pop' ? easeOutBack(n.t / 0.45) : 1;
@@ -263,8 +351,8 @@ function nibEyes(n) {
 // ------------------------------------------------------------------ seasonal costumes
 // Small additions over the heroes and Nibblers, so they stay recognisable. Each is drawn in that body part's own coordinates.
 const COSTUMES = {
-  halloween: { bobHat: witchHat, henryBack: cape, nib: ghostSheet },
-  christmas: { bobHat: santaHat, henryHead: scarfAndAntlers, nib: elfHat },
+  halloween: { bobHat: witchHat, henryBack: cape, dragonNeck: pumpkinBucket, dragonPilot: pilotWitchHat, nib: ghostSheet },
+  christmas: { bobHat: santaHat, henryHead: scarfAndAntlers, dragonBody: fairyLights, dragonPilot: pilotSantaHat, nib: elfHat },
 };
 function wear(part, arg) { const c = SEASON && COSTUMES[SEASON.id]; if (c && c[part]) c[part](arg); }
 function steps(rows, h) { rows.forEach(([x, y, w]) => ctx.fillRect(x, y, w, h)); } // a pixel shape from rows of [x, y, width]
@@ -293,6 +381,26 @@ function scarfAndAntlers(time) { // Mr Henry: little reindeer antlers and a stri
   for (let k = 0; k < 6; k++) { ctx.fillStyle = k % 2 ? '#ffffff' : '#e23b3b'; ctx.fillRect(16 + k * 6, -72, 6, 10); }
   for (let k = 0; k < 3; k++) { ctx.fillStyle = k % 2 ? '#ffffff' : '#e23b3b'; ctx.fillRect(22 + sw, -62 + k * 6, 9, 6); }
   ctx.fillStyle = '#e23b3b'; ctx.fillRect(22 + sw, -44, 2, 4); ctx.fillRect(26 + sw, -44, 2, 4); ctx.fillRect(29 + sw, -44, 2, 4);
+}
+function pumpkinBucket(time) { // Dragon Fly: a pumpkin bucket for sweets, swinging from its neck
+  const sw = Math.round(Math.sin(time * 3) * 2);
+  ctx.fillStyle = '#2b2140'; ctx.fillRect(33, -84, 2, 16);
+  ctx.fillStyle = '#e8772e'; ctx.fillRect(27 + sw, -68, 14, 12); ctx.fillRect(25 + sw, -66, 18, 8);
+  ctx.fillStyle = '#4a9a34'; ctx.fillRect(32 + sw, -71, 4, 3);
+  ctx.fillStyle = '#5b2a10'; ctx.fillRect(29 + sw, -65, 3, 3); ctx.fillRect(36 + sw, -65, 3, 3); ctx.fillRect(30 + sw, -60, 8, 2);
+}
+function pilotWitchHat() { // the pilot: a tiny witch hat
+  ctx.fillStyle = '#4b2f7a'; ctx.fillRect(-30, -127, 24, 3); steps([[-26, -133, 15], [-23, -139, 10], [-21, -144, 6]], 6);
+  ctx.fillStyle = '#ff8a1f'; ctx.fillRect(-26, -130, 15, 3);
+}
+function pilotSantaHat() { // the pilot: a tiny Santa hat
+  ctx.fillStyle = '#e23b3b'; steps([[-26, -132, 16], [-23, -137, 13], [-19, -141, 10], [-13, -143, 6]], 5);
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(-28, -128, 20, 4); ctx.fillRect(-9, -145, 5, 5);
+}
+function fairyLights(time) { // Dragon Fly: fairy lights strung across its body
+  ctx.fillStyle = '#2b5e2e'; ctx.fillRect(-30, -62, 60, 2);
+  for (let k = 0; k < 5; k++) { ctx.globalAlpha = Math.sin(time * 3 + k * 1.7) > -0.4 ? 1 : 0.45; ctx.fillStyle = BULBS[k % 4]; ctx.fillRect(-26 + k * 12, -60, 4, 5); }
+  ctx.globalAlpha = 1;
 }
 function ghostSheet(n) { // Nibblers: a little ghost sheet with eye holes
   ctx.fillStyle = 'rgba(255,255,255,.94)'; ctx.fillRect(-26, -50, 56, 28); ctx.fillRect(-21, -54, 46, 4);
