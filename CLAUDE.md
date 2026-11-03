@@ -5,7 +5,7 @@ A static HTML, canvas and JavaScript learning game for children aged 2 to 5 (pho
 ## Every change
 
 - Run the four playtests before and after (`playtest.py`, `studio_test.py`, `zero_size_test.py` and `perf_test.py` in `tools/playtest/`). They are the only tests; there are no unit tests yet. Every pull request also runs them on GitHub Actions.
-- For any change to drawing, the loop or sound, also run `tools/playtest/perf_report.py` before and after, and say what it showed.
+- For any change to drawing, the loop or sound, also run `tools/playtest/perf_report.py` before and after, in both engines (default Chromium, and `--engine webkit` for Safari on iPhones and iPads), and say what it showed.
 - Work on a branch and open a pull request: `main` refuses direct pushes. A pull request merges only once three checks pass: Robot playtests, CodeScene and Socket Security (see [docs/developing.md](docs/developing.md#merging-into-main)).
 - Don't let Code Health drop; the rules are in `.codescene/code-health-rules.json`.
 - Don't add a `LICENSE` file. The owner is choosing a licence with a trade mark attorney.
