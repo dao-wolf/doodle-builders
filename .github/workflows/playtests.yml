@@ -41,6 +41,10 @@ jobs:
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: python tools/playtest/zero_size_test.py
 
+      - name: Performance guard
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: python tools/playtest/perf_test.py
+
       - name: Upload screenshots
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

@@ -2,10 +2,16 @@
 'use strict';
 
 // ------------------------------------------------------------------ layout
+// The canvas repaints every frame, so big screens (tablets, laptops) draw fewer pixels and the browser scales them up.
+// Phones keep their sharp 2x drawing: they fit within this budget.
+const MAX_PIXELS = 1.7e6;
 function resize() {
-  DPR = Math.min(2, window.devicePixelRatio || 1);
   const vw = window.innerWidth, vh = window.innerHeight;
   if (!vw || !vh) return; // no size yet (a hidden frame, or a phone web view before layout): keep the last layout
+  const fit = Math.floor(Math.sqrt(MAX_PIXELS / (vw * vh)) * 2) / 2; // in half steps, so the scaling stays even
+  DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1, fit));
+  const up = (window.devicePixelRatio || 1) / DPR; // how much the browser scales the canvas up
+  cv.style.imageRendering = up > 1.99 && Math.abs(up - Math.round(up)) < 0.01 ? 'pixelated' : ''; // whole-number scaling stays crisp
   cv.width = Math.round(vw * DPR); cv.height = Math.round(vh * DPR);
   SC = Math.min(vw / 560, vh / 470);
   W = vw / SC; H = vh / SC;

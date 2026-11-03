@@ -68,6 +68,8 @@ let nextNote = 0, noteIdx = 0;
 function startMusic() {
   nextNote = AC.currentTime + 0.1; const E8 = 60 / 116 / 2;
   setInterval(() => {
+    // Music off: synthesise nothing. Fallen behind (a busy page): skip the missed notes rather than play them all at once.
+    if (!S.music || nextNote < AC.currentTime) { nextNote = AC.currentTime + 0.05; if (!S.music) return; }
     while (nextNote < AC.currentTime + 0.25) {
       const at = nextNote - AC.currentTime, m = LEAD[noteIdx % 32];
       if (m) tone(midi(m), E8 * 0.85, 'triangle', 0.45, null, at, musicGain);
@@ -78,3 +80,5 @@ function startMusic() {
 }
 function musicLevel() { return S.music ? (talking() ? 0.015 : 0.06) : 0; }
 function setMusic(on) { S.music = on; saveSettings(); $('musicBtn').setAttribute('aria-pressed', on ? 'true' : 'false'); if (musicGain) musicGain.gain.setTargetAtTime(musicLevel(), AC.currentTime, 0.1); }
+// A hidden page (another app, a locked screen) stops all sound; its clock stops too, so the music waits rather than piling up.
+document.addEventListener('visibilitychange', () => { if (AC) (document.hidden ? AC.suspend() : AC.resume()).catch(() => {}); });
