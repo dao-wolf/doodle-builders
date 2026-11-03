@@ -76,11 +76,12 @@ The game repaints its whole screen every frame, so how often it draws and how ma
 `perf_test.py` guards all three in CI. Its checks don't depend on how fast the machine is, and its `BUDGET` must match `MAX_PIXELS`. To see what a change costs, run the local report before and after it:
 
 ```bash
-python tools/playtest/perf_report.py              # fps, main-thread busy % and canvas size, phone and tablet
-python tools/playtest/perf_report.py --slow 4     # the same with the CPU slowed down 4 times
+python tools/playtest/perf_report.py                   # Chromium: fps, main-thread busy % and canvas size, phone and tablet
+python tools/playtest/perf_report.py --engine webkit   # WebKit, Safari's engine: iPhone 15 and iPad Pro 11 presets
+python tools/playtest/perf_report.py --slow 4          # Chromium with the CPU slowed down 4 times
 ```
 
-Headless Chromium paints on the CPU, so "busy %" overstates what a real device's graphics chip does, but it shows which way a change moves the cost. It isn't run in CI, because the numbers depend on the machine.
+Headless Chromium paints on the CPU, so "busy %" overstates what a real device's graphics chip does, but it shows which way a change moves the cost. The WebKit mode is the stand-in for iPhones and iPads: it runs Safari's engine with Playwright's device presets and reports the CPU time of WebKit's web content and GPU processes (read with `ps`, on macOS). Neither counts the graphics chip's own drawing. On 3 Nov 2026 the WebKit mode gave the same picture as Safari in the iOS Simulator, so there's no need to install the simulator (about 8 GB) for these checks. The report isn't run in CI, because the numbers depend on the machine.
 
 ## Code quality
 
