@@ -68,7 +68,7 @@ function startLevel(i) {
   // HUD
   $('bag').innerHTML = LV.pieces.map((p, k) => { p.icon = p.icon || pieceIcon(p); return `<span class="bslot" id="slot${k}"><img src="${p.icon}" alt=""></span>`; }).join('');
   $('prompt').classList.add('away');
-  const act = $('actBtn'); act.textContent = S.char === 'henry' ? 'TRUMP!' : 'ACHOO!'; act.setAttribute('aria-label', S.char === 'henry' ? 'Trump' : 'Sneeze'); act.classList.toggle('henry', S.char === 'henry');
+  const act = $('actBtn'); act.textContent = HERO().act; act.setAttribute('aria-label', HERO().aria); act.dataset.hero = S.char;
   playing = true; phase = 'intro';
   ['title', 'levels', 'finish', 'settings'].forEach(id => { $(id).hidden = true; });
   $('hud').hidden = false; $('controls').hidden = false;
@@ -302,7 +302,7 @@ function spawnNib(behind, returned = false) {
 }
 function heldPieces() { return status.map((s, i) => s === 'held' ? i : -1).filter(i => i >= 0); }
 function updateNibs(dt) {
-  const D = DIFF[S.diff], contact = S.char === 'henry' ? 62 : 48;
+  const D = DIFF[S.diff], contact = HERO().contact;
   nibs.forEach(n => {
     n.ph += dt * 8; n.t += dt;
     if (n.state === 'pop') { if (n.t > 0.45) { n.state = 'walk'; n.t = 0; } return; }
@@ -363,25 +363,44 @@ function tryJump() { if (playing && hero.onGround && hero.actT <= 0 && !hero.dan
 function tryAction() {
   if (!playing || hero.actT > 0 || hero.dance) return;
   hero.actT = 0.9; hero.acted = false;
-  if (S.char === 'henry') { SFX.hmm(0); later(0.18, () => SFX.hmm(1)); } else { SFX.ah(0); later(0.22, () => SFX.ah(1)); }
+  HERO().charge();
 }
 function actionBlast() {
-  const sx = heroSX(), henry = S.char === 'henry';
-  if (henry) {
-    const f = hero.face || 1;
-    SFX.trump(); popText('PARP!', clamp(sx - 30 * f, 80, W - 80), GY - 165, 36, '#d6f59a', 0.9);
-    for (let i = 0; i < 26; i++) puff(sx - 56 * f, GY - 62 + rand(-10, 10), -f * rand(80, 420), rand(-60, 30), rand(10, 20), pick(['#d7efb0', '#c4e39a', '#e6f5c8', '#cfe7a6']), rand(0.7, 1.3));
-    for (let i = 0; i < 16; i++) { const a = rand(-0.4, 0.4), v = rand(260, 480); puff(sx, GY - 50, Math.cos(a) * v, Math.sin(a) * 60 - 20, rand(8, 14), '#e3f3c6', rand(0.5, 0.9)); }
-    hero.trumps++;
-    if (hero.trumps % 3 === 0 && !talking()) later(0.6, () => talk(['pardon']));
-  } else {
-    SFX.achoo(); popText('ACHOO!', sx, GY - 210, 40, '#ffd23f', 0.9);
-    for (let i = 0; i < 40; i++) { const dir = i % 2 ? 1 : -1, a = rand(-0.6, 0.6), v = rand(300, 760);
-      parts.push({ x: sx + dir * 30, y: GY - 110, vx: dir * Math.cos(a) * v, vy: Math.sin(a) * v - 60, g: 120, life: rand(0.5, 0.9), age: 0, s: rand(5, 13), c: pick(['#f4fbff', '#e0f3ff', '#d5f5c8']), rot: rand(0, 6), vr: rand(-6, 6) }); }
-  }
+  HERO().blow(heroSX(), hero.face || 1);
   shake = reduceMotion ? 0 : 10;
   blast();
 }
+function sneeze(sx) {
+  SFX.achoo(); popText('ACHOO!', sx, GY - 210, 40, '#ffd23f', 0.9);
+  for (let i = 0; i < 40; i++) { const dir = i % 2 ? 1 : -1, a = rand(-0.6, 0.6), v = rand(300, 760);
+    parts.push({ x: sx + dir * 30, y: GY - 110, vx: dir * Math.cos(a) * v, vy: Math.sin(a) * v - 60, g: 120, life: rand(0.5, 0.9), age: 0, s: rand(5, 13), c: pick(['#f4fbff', '#e0f3ff', '#d5f5c8']), rot: rand(0, 6), vr: rand(-6, 6) }); }
+}
+function trump(sx, f) {
+  SFX.trump(); popText('PARP!', clamp(sx - 30 * f, 80, W - 80), GY - 165, 36, '#d6f59a', 0.9);
+  for (let i = 0; i < 26; i++) puff(sx - 56 * f, GY - 62 + rand(-10, 10), -f * rand(80, 420), rand(-60, 30), rand(10, 20), pick(['#d7efb0', '#c4e39a', '#e6f5c8', '#cfe7a6']), rand(0.7, 1.3));
+  for (let i = 0; i < 16; i++) { const a = rand(-0.4, 0.4), v = rand(260, 480); puff(sx, GY - 50, Math.cos(a) * v, Math.sin(a) * 60 - 20, rand(8, 14), '#e3f3c6', rand(0.5, 0.9)); }
+  hero.trumps++;
+  if (hero.trumps % 3 === 0 && !talking()) later(0.6, () => talk(['pardon']));
+}
+// Dragon Fly breathes red fire from its snout, and its wings flap a gust out behind it
+function fireBreath(sx, f) {
+  const mx = sx + 70 * f, my = hero.y - dragonHover(now) - 120;
+  SFX.fire(); popText('ROAR!', clamp(mx + 60 * f, 80, W - 80), my - 50, 40, '#ff7a3c', 0.9);
+  for (let i = 0; i < 30; i++) puff(mx, my + rand(-6, 6), f * rand(220, 620), rand(-70, 50), rand(10, 22), pick(['#e8322b', '#ff5a2b', '#ff8a3c', '#ffc94a']), rand(0.4, 0.8), 2);
+  for (let i = 0; i < 12; i++) puff(sx - 50 * f, hero.y - 80 + rand(-20, 20), -f * rand(160, 420), rand(-40, 40), rand(8, 14), '#e6f6ff', rand(0.4, 0.8));
+}
+// ------------------------------------------------------------------ heroes
+// What makes each hero different in play. hit is the tap area as [behind, in front, height] when facing right.
+const HEROES = {
+  bob: { name: 'Bob', act: 'ACHOO!', aria: 'Sneeze', contact: 48, step: [0.24, 'step'], hit: [46, 46, 175], blow: sneeze,
+    charge: () => { SFX.ah(0); later(0.22, () => SFX.ah(1)); } },
+  henry: { name: 'Mr Henry', act: 'TRUMP!', aria: 'Trump', contact: 62, step: [0.32, 'step'], hit: [62, 80, 125], blow: trump,
+    charge: () => { SFX.hmm(0); later(0.18, () => SFX.hmm(1)); } },
+  dragon: { name: 'Dragon Fly', act: 'FIRE!', aria: 'Breathe fire', contact: 56, step: [0.4, 'whirr'], hit: [64, 70, 160], blow: fireBreath,
+    charge: () => SFX.inhale() },
+};
+if (!HEROES[S.char]) S.char = 'bob';
+const HERO = () => HEROES[S.char];
 
 // ------------------------------------------------------------------ input
 function worldPoint(ev) { const r = cv.getBoundingClientRect(); return [(ev.clientX - r.left) / SC, (ev.clientY - r.top) / SC]; }
@@ -390,8 +409,8 @@ function itemHit(it, x, y) {
   return Math.abs(x - it.x) < 44 && y > it.y - 84 && y < it.y + 14;
 }
 function heroHit(x, y) {
-  const sx = heroSX(), f = hero.face || 1, a = sx - (f > 0 ? 62 : 80), b = sx + (f > 0 ? 80 : 62);
-  return S.char === 'henry' ? (x > a && x < b && y > hero.y - 125 && y < hero.y + 8) : (Math.abs(x - sx) < 46 && y > hero.y - 175 && y < hero.y + 8);
+  const sx = heroSX(), [back, front, top] = HERO().hit, f = hero.face || 1;
+  return x > sx - (f > 0 ? back : front) && x < sx + (f > 0 ? front : back) && y > hero.y - top && y < hero.y + 8;
 }
 function pieceBoxScreen(i) {
   const e = LV.pieces[i].ext, sx = siteX() - camX;
@@ -470,7 +489,7 @@ function showLevels() {
     const i = +b.dataset.lvl; renderPreview(b.querySelector('canvas'), i, null);
     b.addEventListener('click', () => { if (i < S.unlocked) { audioInit(); startLevel(i); } });
   });
-  $('diffChip').textContent = `${DIFF[S.diff].name} · ${S.char === 'henry' ? 'Mr Henry' : 'Bob'}`;
+  $('diffChip').textContent = `${DIFF[S.diff].name} · ${HERO().name}`;
   $('title').hidden = true; $('levels').hidden = false;
 }
 $('lvlBack').addEventListener('click', () => { $('levels').hidden = true; $('title').hidden = false; });
@@ -510,7 +529,7 @@ function update(dt) {
   if (phase === 'ask' && DIFF[S.diff].askSpawn && now > nextAskSpawn) { nextAskSpawn = now + DIFF[S.diff].askSpawn; spawnNib(true); }
   hero.legAmp += ((walking ? 0.5 : 0) - hero.legAmp) * Math.min(1, dt * 12);
   hero.walkPh += dt * 11 * (walking ? 1 : 0);
-  if (walking && hero.onGround) { stepT -= dt; if (stepT <= 0) { SFX.step(); stepT = S.char === 'henry' ? 0.32 : 0.24; } }
+  if (walking && hero.onGround) { stepT -= dt; if (stepT <= 0) { const [gap, sound] = HERO().step; SFX[sound](); stepT = gap; } }
   if (!hero.onGround) {
     hero.vy += 1500 * dt; hero.y += hero.vy * dt;
     if (hero.y >= GY) { hero.y = GY; hero.vy = 0; hero.onGround = true; hero.squash = 0.22; SFX.land(); burst(heroSX(), GY, 8, [rgb(TH.dirt, 1.2), rgb(TH.top)], [60, 160], [3, 6], 0.4, 500, 80); }

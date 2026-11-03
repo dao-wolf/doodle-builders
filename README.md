@@ -11,7 +11,7 @@ A learning game for children aged 2 to 5: answer phonics and number questions to
 
 ## What's in the game
 
-- **Bob's Outpost**, the first adventure. Play as Bob (sneezes Nibblers away) or Mr Henry (trumps them away), collect the pieces of an outpost on a journey, keep the Nibblers off them, then build it. Four outposts: Hilltop Hut, Treehouse, Lighthouse and Snow Castle.
+- **Bob's Outpost**, the first adventure. Play as Bob (sneezes Nibblers away), Mr Henry (trumps them away) or Dragon Fly (a floating robot dragon that breathes red fire at them), collect the pieces of an outpost on a journey, keep the Nibblers off them, then build it. Four outposts: Hilltop Hut, Treehouse, Lighthouse and Snow Castle.
 - **Letters and sounds** in the Little Wandle Letters and Sounds Revised Reception order (Autumn 1 to Spring 1).
 - **Numbers**: find the number (1 to 5 or 1 to 10) and count gems.
 - **Gentle help**: everything is spoken as well as shown, and a wrong answer gets a hint and another go.
@@ -25,7 +25,7 @@ A learning game for children aged 2 to 5: answer phonics and number questions to
 
 ## Credits
 
-- Bob and Mr Henry come from a child's sketch-pad drawings.
+- Bob and Mr Henry come from a child's sketch-pad drawings. Dragon Fly comes from a model built from toy bricks.
 - Built-in voice: **Jenny (Dioco)**, made with [Piper](https://github.com/OHF-Voice/piper1-gpl). The Jenny dataset licence requires the attribution "Jenny (Dioco)" wherever the voice is used, and allows commercial use: <https://github.com/dioco-group/jenny-tts-dataset>. Piper (GPL-3.0) is used only by the voice scripts in `tools/voice/`; the game doesn't include it.
 - Fonts: Andika and Silkscreen (SIL Open Font License). They load from Google Fonts' servers until they are self-hosted.
 - Not affiliated with or endorsed by Little Wandle Letters and Sounds Revised. The teaching order follows their published Reception overview; no Little Wandle materials, audio or images are included.

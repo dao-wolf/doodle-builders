@@ -13,6 +13,7 @@ in one of two browser engines:
     python tools/playtest/perf_report.py                   # Chromium
     python tools/playtest/perf_report.py --engine webkit   # WebKit, Safari's engine
     python tools/playtest/perf_report.py --slow 4          # Chromium with the CPU slowed down 4 times, a rough budget phone
+    python tools/playtest/perf_report.py --hero dragon     # play as another hero (default Bob)
 """
 import argparse, asyncio, subprocess
 from playwright.async_api import async_playwright
@@ -86,7 +87,7 @@ async def measure(engine, page, secs=5):
     return (f1 - f0) / wall, (c1 - c0) / wall * 100, await page.evaluate("cv.width + 'x' + cv.height")
 
 
-async def main(kind, slow):
+async def main(kind, slow, hero):
     srv = localsite.serve(PORT)
     async with async_playwright() as p:
         engine = (WebKit if kind == 'webkit' else Chromium)(p, slow)
@@ -94,7 +95,7 @@ async def main(kind, slow):
         for name, options in engine.devices():
             browser, page = await open_game(engine, options)
             print(f"{name:12} {'title':9} {'%5.1f %12.1f  %s' % await measure(engine, page)}")
-            await page.click('.char[data-char="bob"]'); await page.wait_for_timeout(300)
+            await page.click(f'.char[data-char="{hero}"]'); await page.wait_for_timeout(300)
             await page.click('.lvl[data-lvl="0"]'); await page.wait_for_timeout(3000)
             print(f"{name:12} {'question':9} {'%5.1f %12.1f  %s' % await measure(engine, page)}")
             await browser.close()
@@ -104,6 +105,7 @@ if __name__ == '__main__':
     a = argparse.ArgumentParser()
     a.add_argument('--engine', choices=['chromium', 'webkit'], default='chromium', help='the browser engine to measure in')
     a.add_argument('--slow', type=float, default=1, help='slow the CPU down this many times (Chromium only)')
+    a.add_argument('--hero', choices=['bob', 'henry', 'dragon'], default='bob', help='the hero to play as')
     args = a.parse_args()
     if args.slow > 1 and args.engine == 'webkit': a.error('--slow works with Chromium only')
-    asyncio.run(main(args.engine, args.slow))
+    asyncio.run(main(args.engine, args.slow, args.hero))
