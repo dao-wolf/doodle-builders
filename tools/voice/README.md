@@ -14,3 +14,10 @@ python tools/voice/add_lines.py        # later lines; edit NEW in the script to 
 `add_lines.py` checks each new clip with speech recognition and prints what it heard. Short phrases sometimes come out unclear (for example "the walls" heard as "the wolves"); reword them and run it again. Each clip key must match a key in `TEXT` in `js/content.js`.
 
 Needs `ffmpeg` on your PATH.
+
+If it stops with `Error processing file '.../espeak-ng-data/phontab'`, the Python environment's folder path is too long for the speech engine (seen on a Mac on 3 Nov 2026 with a 183-character path). Make a link with a short path and point the engine at its folder:
+
+```bash
+mkdir -p ~/tmp/espeak && ln -sfn "$(python -c 'import piper, os; print(os.path.dirname(piper.__file__))')/espeak-ng-data" ~/tmp/espeak/espeak-ng-data
+ESPEAK_DATA_PATH=~/tmp/espeak python tools/voice/add_lines.py
+```

@@ -13,15 +13,8 @@ v = PiperVoice.load(D + 'jenny.onnx')
 SR = v.config.sample_rate
 
 NEW = {
-    'go_1': ("Let's find the pieces for the hilltop hut!", 1.08),
-    'nib_henry': ('Oh no, Nibblers! Do a big trump, to blow them away!', 1.08),
-    'done': ("Hooray! It's finished! Brilliant building!", 1.08),
-    'pc_walls': ('the big walls!', 1.2),
-    'pc_doorwin': ('the door and the windows!', 1.08),
-    'pc_hut': ('the little house!', 1.08),
-    'pc_door': ('the front door!', 1.08),
-    'pc_gate': ('the castle gate!', 1.08),
-    'pc_towers': ('the two towers!', 1.08),
+    'hi_dragon': ("Roar! I'm Dragon Fly!", 1.08),
+    'nib_dragon': ('Oh no, Nibblers! Press the fire button, to blow them away!', 1.08),
 }
 
 def trim(a, thr=0.004):
