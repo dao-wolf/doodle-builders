@@ -18,7 +18,8 @@ DEVICES = [('phone', 390, 844, 3), ('tablet', 1024, 1366, 2)]
 COUNT = "() => { const d = draw; window.__frames = 0; window.draw = (...a) => { window.__frames++; return d(...a); }; }"
 
 
-async def open_game(p, w, h, dsf, slow):
+async def open_game(p, device, slow):
+    _, w, h, dsf = device
     browser = await p.chromium.launch(args=['--autoplay-policy=no-user-gesture-required'])
     page = await browser.new_page(viewport={'width': w, 'height': h}, device_scale_factor=dsf, has_touch=True)
     cdp = await page.context.new_cdp_session(page); await cdp.send('Performance.enable')
@@ -43,8 +44,9 @@ async def main(slow):
     srv = localsite.serve(PORT)
     print(f"{'device':8} {'screen':9} {'fps':>5} {'busy %':>7}  canvas")
     async with async_playwright() as p:
-        for name, w, h, dsf in DEVICES:
-            browser, page, cdp = await open_game(p, w, h, dsf, slow)
+        for device in DEVICES:
+            name = device[0]
+            browser, page, cdp = await open_game(p, device, slow)
             print(f"{name:8} {'title':9} {'%5.1f %7.1f  %s' % await measure(page, cdp)}")
             await page.click('.char[data-char="bob"]'); await page.wait_for_timeout(300)
             await page.click('.lvl[data-lvl="0"]'); await page.wait_for_timeout(3000)
