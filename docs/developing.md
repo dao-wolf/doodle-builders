@@ -34,7 +34,7 @@ js/main.js            main loop and start-up
 voice/jenny.json      the built-in voice (Jenny (Dioco), made with Piper), one base64 MP3 per clip
 voice/my-voice.json   your voice pack, if you add one (optional)
 tools/voice/          scripts that made jenny.json (see tools/voice/README.md)
-tools/playtest/       automated playthrough, voice studio and zero-size tests
+tools/playtest/       automated playthrough, voice studio, zero-size and performance tests
 docs/                 these guides, the README screenshot and the seasonal screenshots
 ```
 
@@ -58,11 +58,29 @@ playwright install chromium
 python tools/playtest/playtest.py              # robot plays seven scenarios (phone and desktop, all difficulties, Halloween, Christmas and the normal look)
 python tools/playtest/studio_test.py           # voice studio with a pretend microphone
 python tools/playtest/zero_size_test.py        # the game keeps drawing after it starts with no window size
+python tools/playtest/perf_test.py             # performance guard: frame rate, canvas size, music and hidden-page sound
 ```
 
 Each script starts its own local server, which serves the game under `/doodle-builders/` as GitHub Pages does. They fail on a page error or any file the game needs that doesn't load. Screenshots and the exported test voice pack go to `tools/playtest/out/`.
 
-Every pull request runs all three on GitHub Actions (`.github/workflows/playtests.yml`). If they fail, `tools/playtest/out/` is attached to the run as `playtest-out`.
+Every pull request runs all four on GitHub Actions (`.github/workflows/playtests.yml`). If they fail, `tools/playtest/out/` is attached to the run as `playtest-out`.
+
+## Performance
+
+The game repaints its whole screen every frame, so how often it draws and how many pixels it draws decide how hot a phone or tablet gets. Before 3 Nov 2026 it drew up to 60 frames a second at full device resolution, and a tablet's main thread was busy almost all the time.
+
+- `js/main.js` draws at most 30 frames a second (`FRAME_MS`) on any screen; the game logic still steps in sixtieths of a second.
+- `js/game.js` caps the canvas at `MAX_PIXELS`. Phones keep their 2x drawing; tablets and laptops draw at 1x, and the browser scales the canvas up (crisply, when the scale is a whole number).
+- `js/audio.js` makes no music notes while the music is off, and suspends all sound while the page is hidden.
+
+`perf_test.py` guards all three in CI. Its checks don't depend on how fast the machine is, and its `BUDGET` must match `MAX_PIXELS`. To see what a change costs, run the local report before and after it:
+
+```bash
+python tools/playtest/perf_report.py              # fps, main-thread busy % and canvas size, phone and tablet
+python tools/playtest/perf_report.py --slow 4     # the same with the CPU slowed down 4 times
+```
+
+Headless Chromium paints on the CPU, so "busy %" overstates what a real device's graphics chip does, but it shows which way a change moves the cost. It isn't run in CI, because the numbers depend on the machine.
 
 ## Code quality
 
@@ -74,7 +92,7 @@ Every change goes through a pull request. A ruleset on `main` lets a pull reques
 
 | Check | From | What it checks |
 |---|---|---|
-| Robot playtests | GitHub Actions | all three playtests |
+| Robot playtests | GitHub Actions | all four playtests |
 | CodeScene Code Health Review (main) | CodeScene | the Code Health of the changed code |
 | Socket Security: Pull Request Alerts | Socket | any package the pull request adds or changes |
 
