@@ -59,14 +59,17 @@ async def check_wrong_answer(page, errors):
     if await page.evaluate('phase') != 'ask': errors.append('a wrong answer moved the game on')
 
 
-async def tap_answer(page, st):
-    sc, items = st['SC'], st['items']
+def answer_point(st):
+    """Where to tap for the right answer, or None if it isn't on the screen yet."""
     if st['type'] == 'count':
-        if items: await page.touchscreen.tap(items[0]['x'] * sc, items[0]['y'] * sc)
-        return
-    for item in items:
-        if item['val'] == st['target']:
-            await page.touchscreen.tap(item['x'] * sc, (item['y'] - 32) * sc); return
+        return (st['items'][0]['x'], st['items'][0]['y']) if st['items'] else None
+    right = next((i for i in st['items'] if i['val'] == st['target']), None)
+    return (right['x'], right['y'] - 32) if right else None
+
+
+async def tap_answer(page, st):
+    point = answer_point(st)
+    if point: await page.touchscreen.tap(point[0] * st['SC'], point[1] * st['SC'])
 
 
 async def win_level(page, errors):
