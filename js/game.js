@@ -21,7 +21,7 @@ function resize() {
   GY = H - Math.max(132, H * 0.24);
   OX = W - Math.max(150, (LV ? LV.ext.w / 2 : 120) + 40);
   if (hero.onGround) hero.y = GY;
-  if (round && (phase === 'ask' || phase === 'bask')) placeItems(); // the screen turned: keep answers on screen and clear of the card
+  if (round && ['ask', 'bask'].includes(phase)) placeItems(); // the screen turned: keep answers on screen and clear of the card
 }
 
 // ------------------------------------------------------------------ game state

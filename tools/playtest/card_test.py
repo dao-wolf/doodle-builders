@@ -70,8 +70,8 @@ WORDS = '''async ([type, letter, want]) => {
 }'''
 
 
-async def open_game(browser, w, h, errors, name):
-    page = await browser.new_page(viewport={'width': w, 'height': h}, has_touch=True)
+async def open_game(browser, size, errors, name):
+    page = await browser.new_page(viewport={'width': size[0], 'height': size[1]}, has_touch=True)
     localsite.watch(page, errors, PORT, name)
     await page.goto(f'{localsite.address(PORT)}index.html?season=none')
     await page.evaluate("localStorage.setItem('bobs-outpost-settings', JSON.stringify({ unlocked: 4, mode: 'both', move: 'manual', diff: 'easy', nums: 10 }))")
@@ -85,7 +85,7 @@ async def open_game(browser, w, h, errors, name):
 async def check_layout(browser, errors):
     rounds = 0
     for w, h in SIZES:
-        page = await open_game(browser, w, h, errors, f'{w}x{h}')
+        page = await open_game(browser, (w, h), errors, f'{w}x{h}')
         for r in ROUNDS:
             for _ in range(REPEATS):
                 await page.evaluate(ASK, list(r)); rounds += 1
@@ -101,7 +101,7 @@ async def check_turning(browser, errors):
     """Turning the screen mid-question must keep the answers on screen and clear of the card."""
     for r in ROUNDS[0], ROUNDS[4]:
         for a, b in (390, 844), (844, 390), (768, 1024):
-            page = await open_game(browser, a, b, errors, 'turning')
+            page = await open_game(browser, (a, b), errors, 'turning')
             await page.evaluate(ASK, list(r))
             await page.set_viewport_size({'width': b, 'height': a}); await page.wait_for_timeout(150)
             errors.extend(f'turned to {b}x{a} {r}: {p}' for p in await page.evaluate(CHECK))
@@ -110,7 +110,7 @@ async def check_turning(browser, errors):
 
 
 async def check_diamonds(browser, errors):
-    page = await open_game(browser, 844, 390, errors, 'diamonds')
+    page = await open_game(browser, (844, 390), errors, 'diamonds')
     for n, want in (2, [2]), (3, [3]), (4, [2, 2]), (5, [3, 2]), (6, [3, 3]), (7, [4, 3]):
         await page.evaluate(ASK, ['count', None, n] if n > 2 else ['count', None, 3])
         if n == 2: await page.evaluate("S.nums = 5"); await page.evaluate(ASK, ['count', None, 2]); await page.evaluate("S.nums = 10")
@@ -119,22 +119,34 @@ async def check_diamonds(browser, errors):
     await page.close()
 
 
-async def check_voice(browser, errors):
-    page = await open_game(browser, 390, 844, errors, 'voice')
+async def voice_page(browser, errors):
+    page = await open_game(browser, (390, 844), errors, 'voice')
     await page.evaluate(SPY)
+    return page
+
+
+async def check_clips(browser, errors):
+    """Jenny needs a clip for every line, and neither built-in voice has letter sounds."""
+    page = await voice_page(browser, errors)
     clips = await page.evaluate("fetch('voice/jenny.json').then(r => r.json()).then(j => Object.keys(j))")
     if any(k.startswith('s_') for k in clips): errors.append('Jenny has letter sounds')
     missing = await page.evaluate("cl => Object.keys(TEXT).filter(k => !cl.includes(k))", clips)
     if missing: errors.append(f'lines with no Jenny clip (the whole line falls back to the device voice): {missing}')
     if await page.evaluate("Object.keys(TEXT).some(k => k.startsWith('s_'))"): errors.append('the device voice has words for letter sounds')
+    await page.close()
 
+
+async def check_letter_words(browser, errors):
+    page = await voice_page(browser, errors)
     letter = await page.evaluate(WORDS, ['match', 't', None])
     want = {'asked': ['findit'], 'onWrong': ['tryagain'], 'captionOnWrong': '', 'onRight': ['w_t']}
     errors.extend(f'letter round {k}: {letter[k]}, expected {v}' for k, v in want.items() if letter[k] != v)
     if not letter['captionOnRight'].endswith(' Like tiger!'): errors.append(f"caption after a right answer: {letter['captionOnRight']}")
     await page.close()
 
-    page = await open_game(browser, 390, 844, errors, 'voice'); await page.evaluate(SPY)
+
+async def check_number_words(browser, errors):
+    page = await voice_page(browser, errors)
     number = await page.evaluate(WORDS, ['number', None, 4])
     if number['asked'] != ['findit', 'n4']: errors.append(f"number round asked {number['asked']}")
     if number['onWrong'][:1] != ['thats'] or number['onWrong'][2:] != ['findit', 'n4']: errors.append(f"number round on a wrong answer: {number['onWrong']}")
@@ -142,17 +154,29 @@ async def check_voice(browser, errors):
     if gems['asked'] != ['findit', 'n5', 'gems']: errors.append(f"gem round asked {gems['asked']}")
     await page.close()
 
-    page = await open_game(browser, 390, 844, errors, 'voice'); await page.evaluate(SPY)
+
+async def check_own_recording(browser, errors):
+    """A player's own letter sound must play, and the voice studio must offer letter sounds and numbers."""
+    page = await voice_page(browser, errors)
     await page.evaluate("MY.pack.s_t = new ArrayBuffer(8)")  # as if the player recorded this letter's sound
     mine = await page.evaluate(WORDS, ['match', 't', None])
     if mine['asked'].count('s_t') != 2 or mine['onRight'].count('s_t') != 2: errors.append(f'own recording of a letter sound did not play: {mine}')
     tabs = await page.evaluate("clipList().filter(c => c.key === 's_t' || c.key === 'n4').map(c => c.tab)")
     if tabs != ['sounds', 'numbers']: errors.append(f'voice studio cannot record letter sounds and numbers: {tabs}')
+    await page.close()
+
+
+async def check_device_voice(browser, errors):
+    """With no recording, the device voice must skip the letter sound and say the rest of the line."""
+    page = await voice_page(browser, errors)
     spoken = await page.evaluate('''async () => {
       const out = []; window.SpeechSynthesisUtterance = function (t) { out.push(t); };
-      delete MY.pack.s_t; await talk(['findit', 's_t', 0.25, 's_t', 'w_t']); return out; }''')
+      await talk(['findit', 's_t', 0.25, 's_t', 'w_t']); return out; }''')
     if spoken != ['Find like tiger!']: errors.append(f'the device voice said {spoken}')
     await page.close()
+
+
+CHECKS = check_layout, check_turning, check_diamonds, check_clips, check_letter_words, check_number_words, check_own_recording, check_device_voice
 
 
 async def main():
@@ -160,7 +184,7 @@ async def main():
     srv = localsite.serve(PORT); errors = []
     async with async_playwright() as p:
         browser = await p.chromium.launch()
-        for check in check_layout, check_turning, check_diamonds, check_voice:
+        for check in CHECKS:
             await check(browser, errors)
         await browser.close()
     srv.shutdown()
