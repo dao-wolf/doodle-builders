@@ -1,5 +1,6 @@
 """Adds or re-records individual lines in voice/jenny.json (keeps all other clips), then checks every new
-clip with speech recognition (faster-whisper) so unclear ones can be reworded. Edit NEW below."""
+clip with speech recognition (faster-whisper) so unclear ones can be reworded. Edit NEW below.
+Also drops letter sounds and any clips in RETIRED: the built-in voice must not say them."""
 import base64, json, subprocess
 import numpy as np
 from piper import PiperVoice
@@ -13,9 +14,10 @@ v = PiperVoice.load(D + 'jenny.onnx')
 SR = v.config.sample_rate
 
 NEW = {
-    'hi_dragon': ("Roar! I'm Dragon Fly!", 1.08),
-    'nib_dragon': ('Oh no, Nibblers! Press the fire button, to blow them away!', 1.08),
+    'findit': ('Find', 1.08),
+    'tryagain': ('Try again!', 1.08),
 }
+RETIRED = ('find', 'which', 'thatone', 'letsfind', 'numfind', 'canyou', 'collect')
 
 def trim(a, thr=0.004):
     idx = np.where(np.abs(a) > thr)[0]
@@ -34,7 +36,7 @@ def to_mp3(a, peak=0.8):
                        input=(a * 32767).astype('<i2').tobytes(), capture_output=True, check=True)
     return p.stdout
 
-out = json.load(open(VOICE_JSON))
+out = {k: c for k, c in json.load(open(VOICE_JSON)).items() if k not in RETIRED and not k.startswith('s_')}
 for k, (t, ls) in NEW.items():
     cfg = SynthesisConfig(length_scale=ls, noise_scale=0.55, noise_w_scale=0.7)
     a = np.concatenate([np.asarray(c.audio_float_array) for c in v.synthesize(t, cfg)])

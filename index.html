@@ -19,7 +19,7 @@
 <div id="hud" hidden>
   <div id="bag" aria-label="Outpost pieces collected"></div>
   <div id="prompt" class="away" aria-live="polite">
-    <div id="pBig"></div><div id="pPic"></div><div id="pSlots"></div>
+    <div id="pWord">Find</div><div id="pBig"></div><div id="pSlots"></div>
     <button id="replay" aria-label="Hear it again">
       <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path fill="#2b2140" d="M3 9h4l5-4v14l-5-4H3z"/><path fill="none" stroke="#2b2140" stroke-width="2.4" d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8.5 8.5 0 0 1 0 12"/></svg>
     </button>
@@ -65,7 +65,7 @@
     </div>
     <p class="label">GAME</p>
     <div class="modes" role="group" aria-label="Game">
-      <button class="mode" data-mode="literacy" aria-pressed="false">abc sounds</button>
+      <button class="mode" data-mode="literacy" aria-pressed="false">abc letters</button>
       <button class="mode" data-mode="numeracy" aria-pressed="false">123 numbers</button>
       <button class="mode" data-mode="both" aria-pressed="false">a1 both</button>
     </div>
@@ -87,7 +87,7 @@
     <div class="set">
       <b>GAME</b>
       <div class="seg" role="radiogroup" aria-label="Game">
-        <label><input type="radio" name="mode" id="mLit" value="literacy"><span>Letters &amp; sounds</span></label>
+        <label><input type="radio" name="mode" id="mLit" value="literacy"><span>Letters</span></label>
         <label><input type="radio" name="mode" id="mNum" value="numeracy"><span>Numbers</span></label>
         <label><input type="radio" name="mode" id="mAll" value="both"><span>Both</span></label>
       </div>
@@ -110,8 +110,8 @@
       <p class="tiny" id="diffHelp"></p>
     </div>
     <div class="set">
-      <b>PHONICS SOUNDS</b>
-      <p class="tiny">Reception sounds in Little Wandle Letters and Sounds Revised order, a week of new sounds per button. Pick the ones your child has been taught.</p>
+      <b>LETTERS TO PRACTISE</b>
+      <p class="tiny">Reception letters in Little Wandle Letters and Sounds Revised order, a week of new letters per button. Pick the ones your child has been taught.</p>
       <div id="terms"></div>
     </div>
     <div class="set">
@@ -161,7 +161,7 @@
 <div id="studio" class="overlay" hidden>
   <div class="panel studio" role="dialog" aria-labelledby="studioTitle">
     <div class="shead"><h2 id="studioTitle">Voice studio</h2><button id="studioClose" class="done">DONE</button></div>
-    <p class="tiny">Record your own voice for the sounds, words, numbers and lines. Your recordings play instead of Jenny's. Start with <b>Sounds</b>: those are the ones children copy.</p>
+    <p class="tiny">Record your own voice for the sounds, words, numbers and lines. Your recordings play instead of Jenny's. Start with <b>Sounds</b>: the built-in voices can't say them properly, so they only play if you record them, and they are the ones children copy.</p>
     <p class="note" id="micNote" hidden></p>
     <div class="reccard">
       <div class="reclabel" id="recLabel"></div>

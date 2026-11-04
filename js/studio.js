@@ -39,7 +39,7 @@ const STRETCHY = new Set('s ss f ff l ll m n r v z zz sh th ng'.split(' '));
 const BOUNCY = new Set('t p k c ck b d g h j w y qu ch x nk'.split(' '));
 const VOWELS = new Set('a e i o u'.split(' '));
 function soundTip(g) {
-  const [letters, word, , sound] = G[g];
+  const [letters, word, sound] = G[g];
   if (STRETCHY.has(g)) return `Say the pure sound and hold it: "${sound}…", as in ${word}. No "uh" on the end.`;
   if (BOUNCY.has(g)) return `Short and crisp, the sound at the start of "${word}" (${letters}). No "uh" after it.`;
   if (VOWELS.has(g)) return `The short "${letters}" sound, as in ${word}.`;
@@ -77,6 +77,7 @@ function studioRefresh() {
     const st = clipState(ST.cur.key);
     $('recSay').textContent = ST.cur.say + (st === 'mine' ? ' (Recorded.)' : st === 'pack' ? ' (In your voice pack.)' : '');
     $('recDel').disabled = st !== 'mine';
+    $('recPlay').disabled = ST.cur.tab === 'sounds' && !st; // the built-in voices have no letter sounds to play
   }
 }
 function escapeHtml(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]); }

@@ -21,12 +21,12 @@ Then open <http://localhost:8000>. The microphone works on `localhost`, so you c
 index.html            the page: HUD, buttons, menus, settings and voice studio
 css/style.css         all styles
 js/util.js            canvas setup, constants, helpers
-js/content.js         phonics sounds, numbers, spoken lines, the four outposts and their lands
+js/content.js         letters, numbers, spoken lines, the four outposts and their lands
 js/settings.js        grown-up settings (saved in localStorage)
 js/seasons.js         seasonal themes: when Halloween and Christmas show, and how they change the lands and outposts
 js/art.js             pixel textures, outpost blocks, the heroes (Bob, Mr Henry, Dragon Fly) and the Nibblers
 js/audio.js           sound effects and music (Web Audio, no files)
-js/voice.js           speech: own recordings, then Jenny, then the device voice
+js/voice.js           speech: own recordings, then Jenny, then the device voice (letter sounds: own recordings only)
 js/game.js            game rules: journey, questions, Nibblers, building, input, update loop
 js/render.js          drawing the world and the menu previews
 js/studio.js          the voice studio (record, trim, save, export and import)
@@ -42,7 +42,7 @@ The scripts load in this order at the bottom of `index.html`, and they share one
 
 ## The `TEXT` and `LEVELS` registries
 
-Every line the game says is listed in `TEXT` in `js/content.js`. Each key is one clip: `s_*` are pure sounds, `w_*` example words, `n1` to `n10` numbers, and the rest are Bob's lines. Voice packs use the same keys, so a new line needs a new `TEXT` key (and a Jenny clip, made with `tools/voice/add_lines.py`).
+Every line the game says is listed in `TEXT` in `js/content.js`. Each key is one clip: `w_*` are example words, `n1` to `n10` numbers, and the rest are Bob's lines. Letter sounds (`s_*`) are the exception: they aren't in `TEXT` and have no Jenny clip, because neither built-in voice says them properly, so they play only from the player's own recordings (`soundOf` in `js/voice.js`). Voice packs use the same keys, so a new line needs a new `TEXT` key (and a Jenny clip, made with `tools/voice/add_lines.py`).
 
 The outposts are block lists in `LEVELS` (same file), so new outposts can be added there. Their lands are in `THEMES`, and the difficulty levels are in `DIFF` in `js/settings.js`.
 
@@ -74,12 +74,13 @@ playwright install chromium
 python tools/playtest/playtest.py              # robot plays nine scenarios (phone and desktop, all difficulties, every hero, Halloween, Christmas and the normal look)
 python tools/playtest/studio_test.py           # voice studio with a pretend microphone
 python tools/playtest/zero_size_test.py        # the game keeps drawing after it starts with no window size
+python tools/playtest/card_test.py             # question card: nothing overlaps it on any screen size, and no built-in letter sounds
 python tools/playtest/perf_test.py             # performance guard: frame rate, canvas size, music and hidden-page sound
 ```
 
 Each script starts its own local server, which serves the game under `/doodle-builders/` as GitHub Pages does. They fail on a page error or any file the game needs that doesn't load. Screenshots and the exported test voice pack go to `tools/playtest/out/`.
 
-Every pull request runs all four on GitHub Actions (`.github/workflows/playtests.yml`). If they fail, `tools/playtest/out/` is attached to the run as `playtest-out`.
+Every pull request runs all five on GitHub Actions (`.github/workflows/playtests.yml`). If they fail, `tools/playtest/out/` is attached to the run as `playtest-out`.
 
 ## Performance
 

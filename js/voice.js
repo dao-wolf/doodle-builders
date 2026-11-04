@@ -4,6 +4,7 @@
 //   2. your own recording shipped with the game in voice/my-voice.json,
 //   3. Jenny's recording in voice/jenny.json,
 // and if any clip in a line is missing, the whole line falls back to the device's speech engine.
+// Letter sounds (s_ clips) are the exception: they play only from your own recordings (see soundOf).
 'use strict';
 
 const VO = { raw: null, buf: {}, nodes: [], endAt: 0, token: 0, route: '' };
@@ -52,11 +53,11 @@ function pickVoice() {
 if (hasSpeech) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
 const talking = () => (AC && AC.currentTime < VO.endAt) || (hasSpeech && speechSynthesis.speaking);
 let sayTimer = null;
-function caption(text) { $('say').textContent = text; clearTimeout(sayTimer); sayTimer = setTimeout(() => { $('say').textContent = ''; }, 5500); }
+function caption(text) { if (!$('prompt').classList.contains('away')) return; $('say').textContent = text; clearTimeout(sayTimer); sayTimer = setTimeout(() => { $('say').textContent = ''; }, 5500); }
 function stopVoice() { VO.token++; VO.nodes.forEach(n => { try { n.stop(); } catch (e) { /* already stopped */ } }); VO.nodes = []; VO.endAt = 0; if (hasSpeech) speechSynthesis.cancel(); }
 // parts: clip keys, or numbers (a pause in seconds)
 async function talk(parts, { interrupt = true, show = true, cap = null } = {}) {
-  const text = parts.filter(p => typeof p === 'string').map(p => TEXT[p] || '').join(' ').replace(/ ([!?.,…])/g, '$1');
+  const text = parts.filter(p => typeof p === 'string').map(p => TEXT[p]).filter(Boolean).join(' ').replace(/ ([!?.,])/g, '$1').replace(/([!?.] )([a-z])/g, (m, a, b) => a + b.toUpperCase());
   if (show) caption(cap || text);
   if (interrupt) stopVoice();
   const token = VO.token;
@@ -75,18 +76,21 @@ async function talk(parts, { interrupt = true, show = true, cap = null } = {}) {
     }
   }
   if (!hasSpeech) { VO.route = 'none'; return; }
+  if (!text) return;
   try {
-    const u = new SpeechSynthesisUtterance(text.replace(/…/g, ', '));
+    const u = new SpeechSynthesisUtterance(text);
     if (voice) u.voice = voice;
     u.lang = voice ? voice.lang : 'en-GB'; u.rate = 0.86; u.pitch = 1.04; u.volume = 0.9;
     speechSynthesis.speak(u); VO.route = 'device';
   } catch (e) { VO.route = 'none'; }
 }
 const yes = () => pick(['yes1', 'yes2', 'yes3', 'yes4']);
+// Neither built-in voice says letter sounds properly, so they play only from your own recordings.
+const soundOf = g => (myBytes('s_' + g) ? ['s_' + g, 0.25, 's_' + g] : []);
 // "Test the voice" in settings: says hello and reports what actually played
 async function testVoice() {
   audioInit();
-  await talk(['hi_' + (S.char || 'bob'), 0.2, 's_s', 'w_s']);
+  await talk(['hi_' + (S.char || 'bob'), ...soundOf('s')]);
   const msg = { mine: 'Playing your own recordings (Jenny fills any gaps).', jenny: "Playing Jenny's voice.",
     device: "Using this device's own voice. If you can't hear it, turn the volume up or switch to Natural.",
     none: 'No voice is available on this device. Check the volume, and on iPhone make sure the ringer switch is on or the volume is up.' }[VO.route] || '';
