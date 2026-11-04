@@ -1,4 +1,4 @@
-"""The local web server both playtests use.
+"""The local web server the playtests use, and the browser they run in.
 
 It serves the game under /doodle-builders/, the way GitHub Pages does, so a path that only works
 from the root of a site (such as /js/util.js) fails here too.
@@ -8,6 +8,7 @@ import functools, http.server, os, socketserver, threading
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 BASE = '/doodle-builders/'
 OPTIONAL = ('voice/my-voice.json',)  # a grown-up's own voice pack: the game works without it
+ENGINE = os.environ.get('PLAYTEST_ENGINE', 'chromium')  # chromium, firefox or webkit, or chrome or msedge if installed on this computer
 
 
 class Quiet(http.server.SimpleHTTPRequestHandler):
@@ -25,6 +26,14 @@ class Server(socketserver.ThreadingTCPServer):
     # and a long enough queue that parallel pages aren't turned away
     allow_reuse_address = daemon_threads = True
     request_queue_size = 64
+
+
+async def launch(p, *chromium_args):
+    """Starts the browser PLAYTEST_ENGINE names. The arguments only mean something to Chromium-based browsers."""
+    if ENGINE in ('firefox', 'webkit'):
+        return await getattr(p, ENGINE).launch()
+    channel = None if ENGINE == 'chromium' else ENGINE
+    return await p.chromium.launch(channel=channel, args=list(chromium_args))
 
 
 def address(port):
