@@ -41,6 +41,10 @@ jobs:
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: python tools/playtest/zero_size_test.py
 
+      - name: Question card test
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: python tools/playtest/card_test.py
+
       - name: Performance guard
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: python tools/playtest/perf_test.py

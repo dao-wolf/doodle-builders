@@ -12,10 +12,10 @@ A learning game for children aged 2 to 5: answer phonics and number questions to
 ## What's in the game
 
 - **Bob's Outpost**, the first adventure. Play as Bob (sneezes Nibblers away), Mr Henry (trumps them away) or Dragon Fly (a floating robot dragon that breathes red fire at them), collect the pieces of an outpost on a journey, keep the Nibblers off them, then build it. Four outposts: Hilltop Hut, Treehouse, Lighthouse and Snow Castle.
-- **Letters and sounds** in the Little Wandle Letters and Sounds Revised Reception order (Autumn 1 to Spring 1).
+- **Letters** in the Little Wandle Letters and Sounds Revised Reception order (Autumn 1 to Spring 1).
 - **Numbers**: find the number (1 to 5 or 1 to 10) and count gems.
 - **Gentle help**: everything is spoken as well as shown, and a wrong answer gets a hint and another go.
-- **Your own voice**: record the sounds in the voice studio and the game uses your voice first.
+- **Your own voice**: record letter sounds, numbers and lines in the voice studio and the game uses your voice first. Letter sounds only play if you record them, because the built-in voices can't say them properly.
 - **Seasonal looks**: Halloween (15 October to 3 November) and Christmas (4 November to 6 January) dress up the lands, outposts and heroes. Children can switch the look off and on with a picture button on the start screen.
 
 ## More

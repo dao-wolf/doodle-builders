@@ -21,6 +21,7 @@ function resize() {
   GY = H - Math.max(132, H * 0.24);
   OX = W - Math.max(150, (LV ? LV.ext.w / 2 : 120) + 40);
   if (hero.onGround) hero.y = GY;
+  if (round && ['ask', 'bask'].includes(phase)) placeItems(); // the screen turned: keep answers on screen and clear of the card
 }
 
 // ------------------------------------------------------------------ game state
@@ -124,9 +125,11 @@ function slotPos(i) {
 }
 
 // ------------------------------------------------------------------ questions
-function setPrompt(bigHTML, pic, slots, slotClass) {
-  $('pBig').innerHTML = bigHTML; $('pPic').textContent = pic || '';
-  $('pSlots').innerHTML = slots ? Array.from({ length: slots }, () => `<span class="slot ${slotClass}"></span>`).join('') : '';
+function setPrompt(bigHTML, gems = 0) {
+  $('pBig').innerHTML = bigHTML; $('say').textContent = '';
+  const sl = $('pSlots');
+  sl.innerHTML = Array.from({ length: gems }, () => '<span class="slot gem"></span>').join('');
+  sl.style.setProperty('--cols', gems > 3 ? Math.ceil(gems / 2) : gems); // on short screens: 3 + 2, not one long row
   const p = $('prompt'); p.classList.remove('away', 'pop'); void p.offsetWidth; p.classList.add('pop');
 }
 const gHTML = id => { const s = showG(id); return s.length > 1 ? `<small>${s[0]}</small>${s[1]}` : s[0]; };
@@ -146,55 +149,68 @@ function distractors(target, n) {
   for (const x of d) { if (out.every(y => !clashes(y).has(x))) out.push(x); if (out.length === n) break; }
   return out;
 }
-// answers float in front of the hero, clear of the hero's body
+// the space for answers: below the card and its shadow, above the on-screen buttons
+function belowCard() { const p = $('prompt'); return (p.offsetTop + p.offsetHeight + 6) / SC + 6; }
+function aboveButtons() { const c = $('controls'); return c.offsetHeight ? c.offsetTop / SC : GY; }
+// answers float in front of the hero, clear of the hero's body, and sit lower if the card needs the room
 function optionSpots(n) {
   const P = heroSX(), x0 = P + 125, x1 = Math.min(P + 125 + (n - 1) * 92, W - 50);
-  return Array.from({ length: n }, (_, i) => ({ x: n === 1 ? x0 : lerp(x0, x1, i / (n - 1)), y: GY - 135 - (i % 2) * 42 }));
+  const drop = Math.max(0, belowCard() + 124 - (GY - 177)); // 124: a block and the hint arrow above it
+  const lowest = Math.min(GY - 20, aboveButtons() - 8);
+  return Array.from({ length: n }, (_, i) => ({ x: n === 1 ? x0 : lerp(x0, x1, i / (n - 1)), y: Math.min(GY - 135 - (i % 2) * 42 + drop, lowest) }));
 }
 function makeOptions(vals, kind) {
   items = optionSpots(vals.length).map((p, i) => ({ kind, val: vals[i], x: p.x, y: p.y, born: now + i * 0.12, ph: rand(0, 6), wob: 0, cool: 0, state: 'idle',
     col: BLOCK_COLS[(typeof vals[i] === 'number' ? vals[i] : vals[i].charCodeAt(0) + vals[i].length) % BLOCK_COLS.length] }));
 }
-function makeGems(n) {
-  const P = heroSX(), spots = [];
-  const xa = P + 105, xb = Math.max(xa + 140, W - 45), ya = Math.max(GY - 300, 120), yb = GY - 70;
+function gemSpots(n) {
+  const P = heroSX(), spots = [], xa = P + 105, xb = Math.max(xa + 140, W - 45);
+  const ya = Math.max(GY - 300, belowCard() + 66), yb = Math.min(GY - 30, aboveButtons() - 34, Math.max(GY - 70, ya + 90));
+  const tooClose = (x, y, gap) => spots.some(s => Math.hypot(s.x - x, s.y - y) < gap);
   for (let i = 0; i < n; i++) {
     let x, y, tries = 0;
-    do { x = rand(xa, xb); y = rand(ya, yb); tries++; } while (tries < 60 && spots.some(s => Math.hypot(s[0] - x, s[1] - y) < 66));
-    spots.push([x, y]);
+    do { x = rand(xa, xb); y = rand(ya, yb); tries++; } while (tries < 200 && tooClose(x, y, tries < 100 ? 66 : 50));
+    spots.push({ x, y });
   }
-  items = spots.map(([x, y], i) => ({ kind: 'gem', x, y, born: now + i * 0.1, ph: rand(0, 6), state: 'idle', hue: pick(['#3fd0e8', '#ff7ab0', '#ffd23f', '#8be04e']) }));
+  return spots;
+}
+function makeGems(n) {
+  items = gemSpots(n).map(({ x, y }, i) => ({ kind: 'gem', x, y, born: now + i * 0.1, ph: rand(0, 6), state: 'idle', hue: pick(['#3fd0e8', '#ff7ab0', '#ffd23f', '#8be04e']) }));
+}
+function placeItems() {
+  if (!items.length) return;
+  const spots = items[0].kind === 'gem' ? gemSpots(items.length) : optionSpots(items.length);
+  items.forEach((it, i) => { it.x = spots[i].x; it.y = spots[i].y; });
 }
 function promptParts() {
   const r = round; if (!r) return [];
   if (phase === 'place') return ['place'];
-  if (r.type === 'match') return ['find', 's_' + r.target, 0.25, 's_' + r.target, 'w_' + r.target];
-  if (r.type === 'listen') return ['which', 's_' + r.target, 0.3, 's_' + r.target, 'w_' + r.target];
-  if (r.type === 'number') return ['numfind', 'n' + r.target];
-  if (r.type === 'count') return ['collect', 'n' + r.n, 'gems'];
+  if (r.type === 'match') return ['findit', ...soundOf(r.target)];
+  if (r.type === 'number') return ['findit', 'n' + r.target];
+  if (r.type === 'count') return ['findit', 'n' + r.n, 'gems'];
   return [];
 }
 function askQuestion(where, intro = []) {
   const plan = PLANS[S.mode] || PLANS.both;
   const type = plan[qi++ % plan.length];
   hint = null; round = { type, where, got: 0 };
-  if (type === 'match' || type === 'listen') {
+  if (type === 'match') {
     const g = chooseGrapheme(); round.target = g;
+    setPrompt(gHTML(g));
     makeOptions(shuffle([g, ...distractors(g, 2)]), 'grapheme');
-    if (type === 'match') setPrompt(gHTML(g), ''); else setPrompt('', '🔊' + G[g][2]);
   } else if (type === 'number') {
     const max = S.nums, n = 1 + Math.floor(Math.random() * max); round.target = n;
     const others = shuffle(Array.from({ length: Math.max(max, 6) }, (_, i) => i + 1).filter(x => x !== n)).slice(0, 2);
+    setPrompt(String(n));
     makeOptions(shuffle([n, ...others]), 'number');
-    setPrompt(String(n), '');
   } else {
     const n = S.nums === 10 ? 3 + Math.floor(Math.random() * 5) : 2 + Math.floor(Math.random() * 4); round.n = n;
-    makeGems(n); setPrompt('', '💎', n, 'gem');
+    setPrompt(String(n), n);
+    makeGems(n);
   }
   phase = where === 'build' ? 'bask' : 'ask';
   lastProgress = now; nextAskSpawn = now + (DIFF[S.diff].askSpawn || 999);
-  const introText = intro.map(k => TEXT[k] || '').join(' ');
-  talk([...intro, ...(intro.length ? [0.3] : []), ...promptParts()], type === 'count' ? { cap: `${introText} Collect ${NUMWORD[round.n]} gems!`.trim() } : {});
+  talk([...intro, ...(intro.length ? [0.3] : []), ...promptParts()]);
 }
 function chooseItem(it) {
   if ((phase !== 'ask' && phase !== 'bask') || !round || it.state !== 'idle' || now < it.born) return;
@@ -202,7 +218,7 @@ function chooseItem(it) {
     it.state = 'got'; round.got++; fillSlot(round.got - 1); progress();
     SFX.gem(round.got); burst(it.x, it.y, 14, [it.hue, '#ffffff'], [80, 240], [3, 6], 0.5, 200);
     popText(String(round.got), it.x, it.y - 36, 50, '#ffffff');
-    if (round.got >= round.n) { talk(['n' + round.n, 'gemsdone'], { cap: `${NUMWORD[round.n][0].toUpperCase() + NUMWORD[round.n].slice(1)} gems! Brilliant counting!` }); answered(it.x, it.y, 2.6); }
+    if (round.got >= round.n) { answered(it.x, it.y, 2.6); talk(['n' + round.n, 'gemsdone'], { cap: `${NUMWORD[round.n][0].toUpperCase() + NUMWORD[round.n].slice(1)} gems! Brilliant counting!` }); }
     else talk(['n' + round.got], { show: false });
     return;
   }
@@ -213,17 +229,17 @@ function chooseItem(it) {
     items.forEach(o => { if (o.state === 'idle') { o.state = 'poof'; o.t0 = now; } });
     if (round.type === 'number') {
       const n = round.target;
+      answered(it.x, it.y - 32, 1.6 + n * 0.62);
       talk([yes(), 'count', ...Array.from({ length: n }, (_, i) => 'n' + (i + 1))]);
       for (let i = 0; i < n; i++) later(1.0 + i * 0.62, () => { popText(String(i + 1), it.x - (n - 1) * 15 + i * 30, it.y - 100, 30, '#ffffff', 0.9); SFX.gem(i); });
-      answered(it.x, it.y - 32, 1.6 + n * 0.62);
     } else {
-      talk([yes(), 's_' + round.target, 0.2, 's_' + round.target, 'w_' + round.target]);
       answered(it.x, it.y - 32, 3.0);
+      talk([yes(), ...soundOf(round.target), 'w_' + round.target]);
     }
   } else {
     it.cool = now + 2.2; it.wob = 1; hero.wrongT = 0.6; SFX.wrong(); progress();
-    if (round.type === 'number') talk(['thats', 'n' + it.val, 'canyou', 'n' + round.target]);
-    else talk(['thatone', 's_' + it.val, 'letsfind', 's_' + round.target, 'w_' + round.target]);
+    if (round.type === 'number') talk(['thats', 'n' + it.val, 'findit', 'n' + round.target]);
+    else talk(['tryagain', ...soundOf(round.target)]);
   }
 }
 function progress() { lastProgress = now; hint = null; }
@@ -445,7 +461,7 @@ function holdGate(el, ms, fn) {
 }
 holdBtn($('jumpBtn'), tryJump);
 holdBtn($('actBtn'), tryAction);
-$('replay').addEventListener('click', () => { audioInit(); if (round && (phase === 'ask' || phase === 'bask' || phase === 'place')) talk(promptParts(), round.type === 'count' && phase !== 'place' ? { cap: `Collect ${NUMWORD[round.n]} gems!` } : {}); });
+$('replay').addEventListener('click', () => { audioInit(); if (round && (phase === 'ask' || phase === 'bask' || phase === 'place')) talk(promptParts()); });
 $('musicBtn').addEventListener('click', () => { audioInit(); setMusic(!S.music); });
 function goTitle() {
   gen++; tasks.length = 0; stopVoice(); playing = false; phase = 'menu'; LV = null; nibs = []; items = []; flyers = []; carry = null;
@@ -553,7 +569,7 @@ function update(dt) {
 
   // gentle help after a quiet spell
   if (playing && (phase === 'ask' || phase === 'bask' || phase === 'place') && now - lastProgress > 9 && !talking() && !nowBlocked) {
-    lastProgress = now; talk(promptParts(), round && round.type === 'count' && phase !== 'place' ? { cap: `Collect ${NUMWORD[round.n]} gems!` } : {});
+    lastProgress = now; talk(promptParts());
     if (phase === 'place') hint = 'outline';
     else if (round && round.type === 'count') hint = items.find(i => i.state === 'idle') || null;
     else if (round) hint = items.find(i => i.val === round.target) || null;

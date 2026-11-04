@@ -4,19 +4,19 @@
 // ------------------------------------------------------------------ phonics + numbers content
 // Little Wandle Letters and Sounds Revised, Reception: new graphemes week by week.
 const G = {
-  s: ['s', 'sun', '☀️', 'sss'], a: ['a', 'ant', '🐜', 'a'], t: ['t', 'tiger', '🐯', 't'], p: ['p', 'pig', '🐷', 'p'],
-  i: ['i', 'insect', '🐞', 'i'], n: ['n', 'nose', '👃', 'nnn'], m: ['m', 'moon', '🌙', 'mmm'], d: ['d', 'dog', '🐶', 'd'],
-  g: ['g', 'goat', '🐐', 'g'], o: ['o', 'octopus', '🐙', 'o'], c: ['c', 'cake', '🎂', 'c'], k: ['k', 'kite', '🪁', 'k'],
-  ck: ['ck', 'duck', '🦆', 'ck'], e: ['e', 'egg', '🥚', 'e'], u: ['u', 'umbrella', '☂️', 'u'], r: ['r', 'rocket', '🚀', 'rrr'],
-  h: ['h', 'house', '🏠', 'h'], b: ['b', 'bus', '🚌', 'b'], f: ['f', 'fish', '🐟', 'fff'], l: ['l', 'lion', '🦁', 'lll'],
-  ff: ['ff', 'cliff', '⛰️', 'fff'], ll: ['ll', 'bell', '🔔', 'lll'], ss: ['ss', 'dress', '👗', 'sss'], j: ['j', 'juice', '🧃', 'j'],
-  v: ['v', 'volcano', '🌋', 'vvv'], w: ['w', 'web', '🕸️', 'w'], x: ['x', 'fox', '🦊', 'ks'], y: ['y', 'yellow', '💛', 'y'],
-  z: ['z', 'zebra', '🦓', 'zzz'], zz: ['zz', 'buzz', '🐝', 'zzz'], qu: ['qu', 'queen', '👑', 'kw'], ch: ['ch', 'chick', '🐤', 'ch'],
-  sh: ['sh', 'ship', '🚢', 'shh'], th: ['th', 'think', '🤔', 'th'], ng: ['ng', 'ring', '💍', 'ng'], nk: ['nk', 'wink', '😉', 'nk'],
-  ai: ['ai', 'rain', '🌧️', 'ay'], ee: ['ee', 'tree', '🌳', 'ee'], igh: ['igh', 'light', '💡', 'eye'], oa: ['oa', 'boat', '⛵', 'oh'],
-  oo_l: ['oo', 'boot', '👢', 'oo'], oo_s: ['oo', 'book', '📖', 'uh'], ar: ['ar', 'car', '🚗', 'ar'], or: ['or', 'fork', '🍴', 'or'],
-  ur: ['ur', 'turtle', '🐢', 'ur'], ow: ['ow', 'cow', '🐮', 'ow'], oi: ['oi', 'coin', '🪙', 'oy'], ear: ['ear', 'ear', '👂', 'ear'],
-  air: ['air', 'chair', '🪑', 'air'], er: ['er', 'hammer', '🔨', 'er'],
+  s: ['s', 'sun', 'sss'], a: ['a', 'ant', 'a'], t: ['t', 'tiger', 't'], p: ['p', 'pig', 'p'],
+  i: ['i', 'insect', 'i'], n: ['n', 'nose', 'nnn'], m: ['m', 'moon', 'mmm'], d: ['d', 'dog', 'd'],
+  g: ['g', 'goat', 'g'], o: ['o', 'octopus', 'o'], c: ['c', 'cake', 'c'], k: ['k', 'kite', 'k'],
+  ck: ['ck', 'duck', 'ck'], e: ['e', 'egg', 'e'], u: ['u', 'umbrella', 'u'], r: ['r', 'rocket', 'rrr'],
+  h: ['h', 'house', 'h'], b: ['b', 'bus', 'b'], f: ['f', 'fish', 'fff'], l: ['l', 'lion', 'lll'],
+  ff: ['ff', 'cliff', 'fff'], ll: ['ll', 'bell', 'lll'], ss: ['ss', 'dress', 'sss'], j: ['j', 'juice', 'j'],
+  v: ['v', 'volcano', 'vvv'], w: ['w', 'web', 'w'], x: ['x', 'fox', 'ks'], y: ['y', 'yellow', 'y'],
+  z: ['z', 'zebra', 'zzz'], zz: ['zz', 'buzz', 'zzz'], qu: ['qu', 'queen', 'kw'], ch: ['ch', 'chick', 'ch'],
+  sh: ['sh', 'ship', 'shh'], th: ['th', 'think', 'th'], ng: ['ng', 'ring', 'ng'], nk: ['nk', 'wink', 'nk'],
+  ai: ['ai', 'rain', 'ay'], ee: ['ee', 'tree', 'ee'], igh: ['igh', 'light', 'eye'], oa: ['oa', 'boat', 'oh'],
+  oo_l: ['oo', 'boot', 'oo'], oo_s: ['oo', 'book', 'uh'], ar: ['ar', 'car', 'ar'], or: ['or', 'fork', 'or'],
+  ur: ['ur', 'turtle', 'ur'], ow: ['ow', 'cow', 'ow'], oi: ['oi', 'coin', 'oy'], ear: ['ear', 'ear', 'ear'],
+  air: ['air', 'chair', 'air'], er: ['er', 'hammer', 'er'],
 };
 const TERMS = [
   ['Autumn 1', [['s', 'a', 't', 'p'], ['i', 'n', 'm', 'd'], ['g', 'o', 'c', 'k'], ['ck', 'e', 'u', 'r'], ['h', 'b', 'f', 'l']]],
@@ -34,12 +34,12 @@ function clashes(a) {
 }
 const NUMWORD = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
 const BLOCK_COLS = [[255, 120, 110], [255, 172, 82], [255, 214, 70], [116, 222, 128], [90, 178, 248], [160, 124, 250], [246, 136, 176]];
-const PLANS = { literacy: ['match', 'listen'], numeracy: ['number', 'count'], both: ['match', 'number', 'listen', 'count'] };
+const PLANS = { literacy: ['match'], numeracy: ['number', 'count'], both: ['match', 'number', 'count'] };
 
 const TEXT = {
-  find: 'Can you find this one?', which: 'Which one says', yes1: 'Yes!', yes2: 'Brilliant!', yes3: 'Well done!', yes4: 'Super!',
-  thatone: 'That one says', letsfind: "Let's find", numfind: 'Find the number', thats: "That's", canyou: 'Can you find', count: "Let's count!",
-  collect: 'Collect', gems: 'gems!', gemsdone: 'gems! Brilliant counting!', again: "Let's build again!", place: 'Now tap the glowing shape, to build!',
+  findit: 'Find', tryagain: 'Try again!', yes1: 'Yes!', yes2: 'Brilliant!', yes3: 'Well done!', yes4: 'Super!',
+  thats: "That's", count: "Let's count!",
+  gems: 'gems!', gemsdone: 'gems! Brilliant counting!', again: "Let's build again!", place: 'Now tap the glowing shape, to build!',
   hi_bob: "Hi! I'm Bob!", hi_henry: "Hello! I'm Mr Henry!", hi_dragon: "Roar! I'm Dragon Fly!", go_1: "Let's find the pieces for the hilltop hut!", go_2: "Let's find the pieces for the treehouse!",
   go_3: "Let's find the pieces for the lighthouse!", go_4: "Let's find the pieces for the snow castle!", found: 'You found', took: 'Oh no! A Nibbler took',
   later: "Don't worry, we can get it back later.", gone: 'Quick! Keep the other pieces safe!', gotback: 'Hooray! You got it back!',
@@ -54,7 +54,7 @@ const TEXT = {
   pc_flags: 'the flags!', pc_snowwalls: 'the snowy walls!',
 };
 NUMWORD.forEach((w, i) => { if (i) TEXT['n' + i] = w + '!'; });
-Object.keys(G).forEach(k => { TEXT['s_' + k] = G[k][3] + '…'; TEXT['w_' + k] = 'like ' + G[k][1] + '!'; });
+Object.keys(G).forEach(k => { TEXT['w_' + k] = 'like ' + G[k][1] + '!'; });
 
 // ------------------------------------------------------------------ outposts (levels)
 const row = (r, c0, c1, t) => { const o = []; for (let c = c0; c <= c1; c++) o.push({ c, r, t }); return o; };

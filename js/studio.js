@@ -39,7 +39,7 @@ const STRETCHY = new Set('s ss f ff l ll m n r v z zz sh th ng'.split(' '));
 const BOUNCY = new Set('t p k c ck b d g h j w y qu ch x nk'.split(' '));
 const VOWELS = new Set('a e i o u'.split(' '));
 function soundTip(g) {
-  const [letters, word, , sound] = G[g];
+  const [letters, word, sound] = G[g];
   if (STRETCHY.has(g)) return `Say the pure sound and hold it: "${sound}…", as in ${word}. No "uh" on the end.`;
   if (BOUNCY.has(g)) return `Short and crisp, the sound at the start of "${word}" (${letters}). No "uh" after it.`;
   if (VOWELS.has(g)) return `The short "${letters}" sound, as in ${word}.`;
@@ -71,13 +71,16 @@ function studioRefresh() {
   $('clipList').innerHTML = all.filter(c => c.tab === ST.tab).map(c =>
     `<button class="clip ${c.line ? 'line' : ''} ${clipState(c.key)}" data-key="${c.key}" ${ST.cur && ST.cur.key === c.key ? 'aria-current="true"' : ''}><i></i>${escapeHtml(c.label)}</button>`).join('');
   $('clipList').querySelectorAll('.clip').forEach(b => b.addEventListener('click', () => selectClip(all.find(c => c.key === b.dataset.key))));
-  if (ST.cur) {
-    $('recLabel').textContent = ST.cur.tab === 'sounds' ? showG(ST.cur.key.slice(2)).join(' ') + (ST.cur.key.startsWith('s_oo') ? ` (${G[ST.cur.key.slice(2)][1]})` : '') : ST.cur.label;
-    $('recLabel').classList.toggle('long', ST.cur.label.length > 12);
-    const st = clipState(ST.cur.key);
-    $('recSay').textContent = ST.cur.say + (st === 'mine' ? ' (Recorded.)' : st === 'pack' ? ' (In your voice pack.)' : '');
-    $('recDel').disabled = st !== 'mine';
-  }
+  showCurrentClip();
+}
+function showCurrentClip() {
+  if (!ST.cur) return;
+  $('recLabel').textContent = ST.cur.tab === 'sounds' ? showG(ST.cur.key.slice(2)).join(' ') + (ST.cur.key.startsWith('s_oo') ? ` (${G[ST.cur.key.slice(2)][1]})` : '') : ST.cur.label;
+  $('recLabel').classList.toggle('long', ST.cur.label.length > 12);
+  const st = clipState(ST.cur.key);
+  $('recSay').textContent = ST.cur.say + (st === 'mine' ? ' (Recorded.)' : st === 'pack' ? ' (In your voice pack.)' : '');
+  $('recDel').disabled = st !== 'mine';
+  $('recPlay').disabled = ST.cur.tab === 'sounds' && !st; // the built-in voices have no letter sounds to play
 }
 function escapeHtml(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]); }
 function selectClip(c) { if (!c) return; ST.cur = c; recMsg(''); studioRefresh(); const el = $('clipList').querySelector('[aria-current="true"]'); if (el) el.scrollIntoView({ block: 'nearest' }); }
