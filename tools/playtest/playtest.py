@@ -1,4 +1,4 @@
-"""Automated playthrough of Bob's Outpost in headless Chromium.
+"""Automated playthrough of Bob's Outpost in a headless browser (Chromium unless PLAYTEST_ENGINE names another).
 
 A robot player picks a hero, walks (with the arrow keys in manual mode), answers every question
 (sometimes picking a wrong answer first), blows Nibblers away (or is slow to on purpose) and builds the outpost.
@@ -11,6 +11,7 @@ or its picture button doesn't switch the look off and on.
     pip install playwright && playwright install chromium
     python tools/playtest/playtest.py                 # all scenarios
     python tools/playtest/playtest.py phone-manual    # one scenario
+    PLAYTEST_ENGINE=firefox python tools/playtest/playtest.py   # in Firefox (or webkit, Safari's engine)
 """
 import asyncio, os, sys, time
 from playwright.async_api import async_playwright
@@ -147,7 +148,7 @@ async def main(names):
     os.makedirs(OUT, exist_ok=True)
     srv = localsite.serve(PORT)
     async with async_playwright() as p:
-        browser = await p.chromium.launch(args=['--autoplay-policy=no-user-gesture-required'])
+        browser = await localsite.launch(p, '--autoplay-policy=no-user-gesture-required')
         results = await asyncio.gather(*[play(browser, n, *SCENARIOS[n]) for n in names])
         await browser.close()
     srv.shutdown()

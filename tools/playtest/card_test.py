@@ -183,7 +183,7 @@ async def main():
     os.makedirs(OUT, exist_ok=True)
     srv = localsite.serve(PORT); errors = []
     async with async_playwright() as p:
-        browser = await p.chromium.launch()
+        browser = await localsite.launch(p)
         for check in CHECKS:
             await check(browser, errors)
         await browser.close()

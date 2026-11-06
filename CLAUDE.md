@@ -4,7 +4,7 @@ A static HTML, canvas and JavaScript learning game for children aged 2 to 5 (pho
 
 ## Every change
 
-- Run the five playtests before and after (`playtest.py`, `studio_test.py`, `zero_size_test.py`, `perf_test.py` and `card_test.py` in `tools/playtest/`). They are the only tests; there are no unit tests yet. Every pull request also runs them on GitHub Actions.
+- Run the six playtests before and after (`playtest.py`, `studio_test.py`, `zero_size_test.py`, `perf_test.py`, `card_test.py` and `touch_test.py` in `tools/playtest/`). They are the only tests; there are no unit tests yet. Every pull request also runs them on GitHub Actions, and three of them again in Firefox and WebKit.
 - For any change to drawing, the loop or sound, also run `tools/playtest/perf_report.py` before and after, in both engines (default Chromium, and `--engine webkit` for Safari on iPhones and iPads), and say what it showed.
 - Work on a branch and open a pull request: `main` refuses direct pushes. A pull request merges only once three checks pass: Robot playtests, CodeScene and Socket Security (see [docs/developing.md](docs/developing.md#merging-into-main)).
 - Don't let Code Health drop; the rules are in `.codescene/code-health-rules.json`.
@@ -22,6 +22,7 @@ A static HTML, canvas and JavaScript learning game for children aged 2 to 5 (pho
 
 ## Design decisions to keep
 
+- Players choose their browser: support current Chrome, Safari, Edge, Samsung Internet and Firefox.
 - The players are 2 to 5 years old. Wrong answers get a gentle "Try again!" and a retry, a hint arrow appears after a quiet spell, and everything is spoken as well as shown, except letter sounds unless the player has recorded them. Hard mode's "Try again" ending is the one exception, and is under review.
 - Phonics follows the Little Wandle Reception order. The built-in voices say neither letter names nor letter sounds, because both voice libraries pronounce them wrongly: sounds play only from own recordings. Include no Little Wandle materials, audio or images. Distractors never pair lookalikes (b/d/p) or same-sound spellings (c/k/ck): see `LOOKALIKE` and `SAME` in `js/content.js`.
 - Answers float in front of the hero and never spawn on them, or under the question card. Gems are collected only by tapping.

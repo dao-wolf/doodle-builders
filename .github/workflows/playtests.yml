@@ -11,7 +11,7 @@ jobs:
   playtests:
     name: Robot playtests
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -23,14 +23,14 @@ jobs:
           cache: pip
           cache-dependency-path: tools/playtest/requirements.txt
 
-      - name: Install Playwright and Chromium
+      - name: Install Playwright, Chromium, Firefox and WebKit
         id: install
         run: |
           pip install -r tools/playtest/requirements.txt
-          playwright install --with-deps chromium
+          playwright install --with-deps chromium firefox webkit
 
       # Each script starts its own local server.
-      - name: Game playtest (seven scenarios)
+      - name: Game playtest
         run: python tools/playtest/playtest.py
 
       - name: Voice studio test
@@ -45,9 +45,27 @@ jobs:
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: python tools/playtest/card_test.py
 
+      - name: Touch test
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: python tools/playtest/touch_test.py
+
       - name: Performance guard
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: python tools/playtest/perf_test.py
+
+      # WebKit is Safari's engine, and the one every browser on an iPhone or iPad must use.
+      - name: Firefox and WebKit
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: |
+          status=0
+          for engine in firefox webkit; do
+            for test in playtest card_test touch_test; do
+              echo "::group::$test in $engine"
+              PLAYTEST_ENGINE=$engine python tools/playtest/$test.py || status=1
+              echo "::endgroup::"
+            done
+          done
+          exit $status
 
       - name: Upload screenshots
         if: failure()
