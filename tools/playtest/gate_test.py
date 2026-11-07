@@ -99,10 +99,24 @@ async def check_grown_up_gets_in(browser, errors):
 async def check_wrong_answers_lock(browser, errors):
     page = await open_game(browser, errors, 'wrong answers')
     await hold(page, '#grownBtn')
+    await two_wrong_answers(page, errors)
+    await third_wrong_answer_locks(page, errors)
+    await open_a_minute_later(page, errors)
+    await page.close()
+
+
+async def two_wrong_answers(page, errors):
+    """Each brings a message and a new number, and the check stays open."""
     for n in 1, 2:
         before = await page.text_content('#gateWords'); await wrong_answer(page)
         s = await page.evaluate(SHOWN)
-        if s['settings'] or not s['gate'] or not s['msg'] or s['words'] == before: errors.append(f'after wrong answer {n}: {s}')
+        wrong = (('the settings opened', s['settings']), ('the check closed', not s['gate']), ('no message', not s['msg']), ('the same number again', s['words'] == before))
+        problems = [what for what, happened in wrong if happened]
+        if problems: errors.append(f'after wrong answer {n}: {problems}')
+
+
+async def third_wrong_answer_locks(page, errors):
+    """The third locks the check: no keypad, no settings, even if it's opened again straight away."""
     await wrong_answer(page)
     s = await page.evaluate(SHOWN)
     if s['settings'] or s['keys']: errors.append(f'three wrong answers did not lock the check: {s}')
@@ -110,11 +124,12 @@ async def check_wrong_answers_lock(browser, errors):
     s = await page.evaluate(SHOWN)
     if s['settings'] or s['keys']: errors.append(f'the check opened again straight after the lock: {s}')
     await tap(page, '#gateBack')
+
+
+async def open_a_minute_later(page, errors):
     await page.evaluate("(() => { const real = Date.now; Date.now = () => real() + 61000; })()")  # a minute later
     await hold(page, '#grownBtn'); await pass_gate(page)
-    s = await page.evaluate(SHOWN)
-    if not s['settings']: errors.append(f'a minute after the lock, the right number did not open the settings: {s}')
-    await page.close()
+    if not (await page.evaluate(SHOWN))['settings']: errors.append('a minute after the lock, the right number did not open the settings')
 
 
 async def check_during_game(browser, errors):
