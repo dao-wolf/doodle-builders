@@ -16,6 +16,7 @@ or its picture button doesn't switch the look off and on.
 import asyncio, os, sys, time
 from playwright.async_api import async_playwright
 import localsite
+from gate_test import pass_gate
 
 OUT = os.path.join(os.path.dirname(__file__), 'out')
 PORT = 8780
@@ -60,12 +61,13 @@ async def pick(page, right, wrong, sc):
 
 
 async def check_pause_and_tap(page, st, shot, log, errors):
-    """Holding the gear button must pause the game, and tapping the ground ahead must walk the hero."""
+    """Holding the gear button must pause the game (the grown-ups check, then the settings), and tapping the ground
+    ahead must walk the hero."""
     gear = await page.locator('#gearBtn').bounding_box()
     await page.mouse.move(gear['x'] + 20, gear['y'] + 20); await page.mouse.down(); await page.wait_for_timeout(900); await page.mouse.up()
     a = await page.evaluate('hero.x'); await page.wait_for_timeout(600); b = await page.evaluate('hero.x')
     paused = await page.evaluate('isPaused()') and a == b
-    await shot('settings_ingame'); await page.click('#setDone')
+    await pass_gate(page, touch=False); await shot('settings_ingame'); await page.click('#setDone')
     await page.mouse.click((st['heroX'] + 150) * st['SC'], (st['GY'] + 10) * st['SC']); await page.wait_for_timeout(500)
     moved = await page.evaluate('hero.x') > b + 20
     log.extend([('pause-check', 'paused' if paused else 'NOT PAUSED'), ('tap-walk', 'moved' if moved else 'DID NOT MOVE')])
@@ -80,6 +82,7 @@ async def check_season(page, name, season, errors):
     if look is None: return
     seen = [await page.evaluate('document.body.dataset.season')]
     for _ in range(2 if await page.is_visible('#seasonBtn') else 0):  # with no season there must be no button
+        await page.wait_for_timeout(800)  # two separate taps: a quicker second tap is a double tap, which counts once
         await page.click('#seasonBtn'); seen.append(await page.evaluate('document.body.dataset.season'))
     await page.screenshot(path=f'{OUT}/{name}_title.png')
     want = [look, '', look] if look else ['']

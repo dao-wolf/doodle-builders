@@ -11,14 +11,17 @@ the game needs that doesn't load.
 import asyncio, base64, json, os, sys, wave, io
 from playwright.async_api import async_playwright
 import localsite
+from gate_test import pass_gate
 
 OUT = os.path.join(os.path.dirname(__file__), 'out')
 PORT = 8781
 
 
 async def hold(page, sel, ms):
+    """Holds a button, then answers the grown-ups check that follows."""
     b = await page.locator(sel).bounding_box()
     await page.mouse.move(b['x'] + 15, b['y'] + 15); await page.mouse.down(); await page.wait_for_timeout(ms); await page.mouse.up()
+    await page.wait_for_timeout(150); await pass_gate(page, touch=False)
 
 
 async def main(mic_wav):

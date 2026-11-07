@@ -4,7 +4,7 @@ A static HTML, canvas and JavaScript learning game for children aged 2 to 5 (pho
 
 ## Every change
 
-- Run the six playtests before and after (`playtest.py`, `studio_test.py`, `zero_size_test.py`, `perf_test.py`, `card_test.py` and `touch_test.py` in `tools/playtest/`). They are the only tests; there are no unit tests yet. Every pull request also runs them on GitHub Actions, and three of them again in Firefox and WebKit.
+- Run the nine playtests before and after (`playtest.py`, `studio_test.py`, `zero_size_test.py`, `perf_test.py`, `card_test.py`, `touch_test.py`, `zoom_test.py`, `season_test.py` and `gate_test.py` in `tools/playtest/`). They are the only tests; there are no unit tests yet. Every pull request also runs them on GitHub Actions, and six of them again in Firefox and WebKit.
 - For any change to drawing, the loop or sound, also run `tools/playtest/perf_report.py` before and after, in both engines (default Chromium, and `--engine webkit` for Safari on iPhones and iPads), and say what it showed.
 - Work on a branch and open a pull request: `main` refuses direct pushes. A pull request merges only once three checks pass: Robot playtests, CodeScene and Socket Security (see [docs/developing.md](docs/developing.md#merging-into-main)).
 - Don't let Code Health drop; the rules are in `.codescene/code-health-rules.json`.
@@ -26,6 +26,9 @@ A static HTML, canvas and JavaScript learning game for children aged 2 to 5 (pho
 - The players are 2 to 5 years old. Wrong answers get a gentle "Try again!" and a retry, a hint arrow appears after a quiet spell, and everything is spoken as well as shown, except letter sounds unless the player has recorded them. Hard mode's "Try again" ending is the one exception, and is under review.
 - Phonics follows the Little Wandle Reception order. The built-in voices say neither letter names nor letter sounds, because both voice libraries pronounce them wrongly: sounds play only from own recordings. Include no Little Wandle materials, audio or images. Distractors never pair lookalikes (b/d/p) or same-sound spellings (c/k/ck): see `LOOKALIKE` and `SAME` in `js/content.js`.
 - Answers float in front of the hero and never spawn on them, or under the question card. Gems are collected only by tapping.
+- Sizes: the question card is drawn at `--card-k` (0.8, in `css/style.css`) and the answers at `ANSWER_K` (1.1, in `js/game.js`) of their first sizes. Change a size there, not one dimension at a time; `card_test.py` checks both.
+- The page never zooms. Every element sets its own `touch-action` (Safari on iPhones doesn't pass body's on to positioned elements, so a double tap zoomed and couldn't be undone). `zoom_test.py` checks every screen.
+- Settings sit behind a grown-ups check after the hold: a number from 21 to 99 shown only in words, never spoken, new each time, and locked for a minute after three wrong answers. A 4 year old got past the hold alone, so don't make the check easier.
 - Defaults are in `DEFAULTS` (`js/settings.js`): game mode Both, Autumn 1 sounds, lowercase letters, numbers 1 to 5, movement "I steer", difficulty Easy, voice Natural (Jenny) with own recordings first. Change them only on purpose.
 - The "Jenny (Dioco)" credit must stay visible (licence requirement).
 - British English and plain words in all copy, comments and docs.

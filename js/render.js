@@ -202,24 +202,26 @@ function drawCube(x, y, c, label, s = 1, glow = 0) {
   }
   ctx.restore();
 }
+// a gem to count, centred on x, y, at size s; twinkle adds a sparkle beside it
+function drawGem(x, y, hue, s = 1, twinkle = false) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  if (twinkle) { ctx.fillStyle = '#fff'; ctx.fillRect(13, -22, 3, 9); ctx.fillRect(10, -19, 9, 3); }
+  ctx.rotate(Math.PI / 4);
+  ctx.fillStyle = hue; ctx.fillRect(-15, -15, 30, 30); ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.fillRect(-15, -15, 30, 6); ctx.fillRect(-15, -15, 6, 30);
+  ctx.strokeStyle = '#2b2140'; ctx.lineWidth = 3; ctx.strokeRect(-15, -15, 30, 30);
+  ctx.restore();
+}
 function drawItem(it, time) {
   const k = easeOutBack((now - it.born) / 0.35);
   if (k <= 0.01) return;
   const fy = Math.sin(time * 2.2 + it.ph) * 5;
-  if (it.kind === 'gem') {
-    const y = it.y + fy;
-    ctx.save(); ctx.translate(it.x, y); ctx.scale(k, k); ctx.rotate(Math.PI / 4);
-    ctx.fillStyle = it.hue; ctx.fillRect(-15, -15, 30, 30); ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.fillRect(-15, -15, 30, 6); ctx.fillRect(-15, -15, 6, 30);
-    ctx.strokeStyle = '#2b2140'; ctx.lineWidth = 3; ctx.strokeRect(-15, -15, 30, 30); ctx.restore();
-    if (Math.sin(time * 4 + it.ph) > 0.8) { ctx.fillStyle = '#fff'; ctx.fillRect(it.x + 13, y - 22, 3, 9); ctx.fillRect(it.x + 10, y - 19, 9, 3); }
-    return;
-  }
+  if (it.kind === 'gem') { drawGem(it.x, it.y + fy, it.hue, k * ANSWER_K, Math.sin(time * 4 + it.ph) > 0.8); return; }
   let x = it.x, s = k, a = 1;
   if (it.state === 'poof') { const q = clamp((now - it.t0) / 0.4, 0, 1); s = 1 - q; a = 1 - q; }
   if (it.wob) x += Math.sin(time * 40) * 6 * it.wob;
   ctx.save(); ctx.globalAlpha = a;
-  if (it.state === 'idle') drawShadow(it.x, GY - it.y, 26 * s);
-  drawCube(x, it.y + fy, it.col, it, s);
+  if (it.state === 'idle') drawShadow(it.x, GY - it.y, 26 * s * ANSWER_K);
+  drawCube(x, it.y + fy, it.col, it, s * ANSWER_K);
   ctx.restore();
 }
 function drawPixelArrow(x, y) {
@@ -327,7 +329,7 @@ function draw(time) {
   flakes.forEach(f => { ctx.fillStyle = f.c; ctx.fillRect(f.x * W, f.y * GY, f.s, f.s); });
   const bobble = Math.sin(time * 6) * 6;
   if (hint === 'outline' && phase === 'place' && carry) { const bx = pieceBoxScreen(carry.piece); drawPixelArrow(bx.cx, bx.y0 - 14 + bobble); }
-  else if (hint && hint.state === 'idle') drawPixelArrow(hint.x, (hint.kind === 'gem' ? hint.y - 30 : hint.y - 86) + bobble);
+  else if (hint && hint.state === 'idle') drawPixelArrow(hint.x, hint.y - (hint.kind === 'gem' ? 30 : 86) * ANSWER_K + bobble);
 }
 // soft scenery behind the menus
 let menuLook = null;
