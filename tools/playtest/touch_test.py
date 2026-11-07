@@ -20,7 +20,7 @@ COUNT_TALK = "(() => { window.talks = 0; const said = talk; talk = (...a) => { w
 SETTINGS = "localStorage.setItem('bobs-outpost-settings', JSON.stringify({ diff: 'easy', unlocked: 4, mode: 'both', move: 'auto' }))"
 CENTRE = "s => { const r = document.querySelector(s).getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }"
 # control, what should be true just after a tap on it (None: only that the game carries on)
-CONTROLS = (('#replay', 'window.talks > 0'), ('#musicBtn', '!S.music'), ('#musicBtn', 'S.music'), ('#gearBtn', "$('settings').hidden"),
+CONTROLS = (('#replay', 'window.talks > 0'), ('#musicBtn', '!S.music'), ('#musicBtn', 'S.music'), ('#gearBtn', "$('settings').hidden && $('gate').hidden"),
             ('#homeBtn', "!$('hud').hidden"), ('#jumpBtn', '!hero.onGround'), ('#actBtn', 'hero.actT > 0'), ('#prompt', None), ('#bag', None))
 
 

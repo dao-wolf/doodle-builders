@@ -5,6 +5,9 @@
 // The canvas repaints every frame, so big screens (tablets, laptops) draw fewer pixels and the browser scales them up.
 // Phones keep their sharp 2x drawing: they fit within this budget.
 const MAX_PIXELS = 1.7e6;
+// How big the answers are (blocks with letters or numbers, and gems), next to their first design. Their drawing,
+// where a tap counts, and the spacing between them all grow with it.
+const ANSWER_K = 1.1;
 function setCanvasScale(vw, vh) {
   const dpr = window.devicePixelRatio || 1, fit = Math.floor(Math.sqrt(MAX_PIXELS / (vw * vh)) * 2) / 2; // half steps keep scaling even
   DPR = Math.max(1, Math.min(2, dpr, fit));
@@ -107,7 +110,12 @@ function applySeason() {
   skinOutposts(SEASON);
   if (LV) dressLand(levelIdx);
 }
+// A quick second tap (a double tap, or a child tapping again and again) counts once, so the look doesn't flip back
+const SEASON_TAP_GAP = 700; // ms
+let seasonTapAt = -Infinity;
 $('seasonBtn').addEventListener('click', () => {
+  const t = performance.now(); if (t - seasonTapAt < SEASON_TAP_GAP) return;
+  seasonTapAt = t;
   audioInit(); S.seasonOff = SEASON ? seasonOpen.key : ''; saveSettings(); applySeason();
   if (SEASON) SFX.good(); else SFX.pop();
 });
@@ -131,6 +139,7 @@ function setPrompt(bigHTML, gems = 0) {
   sl.innerHTML = Array.from({ length: gems }, () => '<span class="slot gem"></span>').join('');
   sl.style.setProperty('--cols', gems > 3 ? Math.ceil(gems / 2) : gems); // on short screens: 3 + 2, not one long row
   const p = $('prompt'); p.classList.remove('away', 'pop'); void p.offsetWidth; p.classList.add('pop');
+  p.classList.toggle('tail', /[gjpqy]/.test($('pBig').textContent)); // room below for a letter's tail (CSS)
 }
 const gHTML = id => { const s = showG(id); return s.length > 1 ? `<small>${s[0]}</small>${s[1]}` : s[0]; };
 function fillSlot(i) { const s = $('pSlots').children[i]; if (s) s.classList.add('on'); }
@@ -154,22 +163,22 @@ function belowCard() { const p = $('prompt'); return (p.offsetTop + p.offsetHeig
 function aboveButtons() { const c = $('controls'); return c.offsetHeight ? c.offsetTop / SC : GY; }
 // answers float in front of the hero, clear of the hero's body, and sit lower if the card needs the room
 function optionSpots(n) {
-  const P = heroSX(), x0 = P + 125, x1 = Math.min(P + 125 + (n - 1) * 92, W - 50);
-  const drop = Math.max(0, belowCard() + 124 - (GY - 177)); // 124: a block and the hint arrow above it
+  const K = ANSWER_K, P = heroSX(), x0 = P + 125, x1 = Math.min(P + 125 + (n - 1) * 92 * K, W - 50 * K);
+  const drop = Math.max(0, belowCard() + 124 * K - (GY - 177)); // 124: a block and the hint arrow above it
   const lowest = Math.min(GY - 20, aboveButtons() - 8);
-  return Array.from({ length: n }, (_, i) => ({ x: n === 1 ? x0 : lerp(x0, x1, i / (n - 1)), y: Math.min(GY - 135 - (i % 2) * 42 + drop, lowest) }));
+  return Array.from({ length: n }, (_, i) => ({ x: n === 1 ? x0 : lerp(x0, x1, i / (n - 1)), y: Math.min(GY - 135 - (i % 2) * 42 * K + drop, lowest) }));
 }
 function makeOptions(vals, kind) {
   items = optionSpots(vals.length).map((p, i) => ({ kind, val: vals[i], x: p.x, y: p.y, born: now + i * 0.12, ph: rand(0, 6), wob: 0, cool: 0, state: 'idle',
     col: BLOCK_COLS[(typeof vals[i] === 'number' ? vals[i] : vals[i].charCodeAt(0) + vals[i].length) % BLOCK_COLS.length] }));
 }
 function gemSpots(n) {
-  const P = heroSX(), spots = [], xa = P + 105, xb = Math.max(xa + 140, W - 45);
-  const ya = Math.max(GY - 300, belowCard() + 66), yb = Math.min(GY - 30, aboveButtons() - 34, Math.max(GY - 70, ya + 90));
+  const K = ANSWER_K, P = heroSX(), spots = [], xa = P + 105, xb = Math.max(xa + 140, W - 45 * K);
+  const ya = Math.max(GY - 300, belowCard() + 66 * K), yb = Math.min(GY - 30, aboveButtons() - 34 * K, Math.max(GY - 70, ya + 90));
   const tooClose = (x, y, gap) => spots.some(s => Math.hypot(s.x - x, s.y - y) < gap);
   for (let i = 0; i < n; i++) {
     let x, y, tries = 0;
-    do { x = rand(xa, xb); y = rand(ya, yb); tries++; } while (tries < 200 && tooClose(x, y, tries < 100 ? 66 : 50));
+    do { x = rand(xa, xb); y = rand(ya, yb); tries++; } while (tries < 200 && tooClose(x, y, (tries < 100 ? 66 : 50) * K));
     spots.push({ x, y });
   }
   return spots;
@@ -421,8 +430,9 @@ const HERO = () => HEROES[S.char];
 // ------------------------------------------------------------------ input
 function worldPoint(ev) { const r = cv.getBoundingClientRect(); return [(ev.clientX - r.left) / SC, (ev.clientY - r.top) / SC]; }
 function itemHit(it, x, y) {
-  if (it.kind === 'gem') return Math.hypot(x - it.x, y - it.y) < 40;
-  return Math.abs(x - it.x) < 44 && y > it.y - 84 && y < it.y + 14;
+  const K = ANSWER_K;
+  if (it.kind === 'gem') return Math.hypot(x - it.x, y - it.y) < 40 * K;
+  return Math.abs(x - it.x) < 44 * K && y > it.y - 84 * K && y < it.y + 14 * K;
 }
 function heroHit(x, y) {
   const sx = heroSX(), [back, front, top] = HERO().hit, f = hero.face || 1;
@@ -446,6 +456,8 @@ cv.addEventListener('pointerdown', ev => {
   if (heroHit(x, y)) { tryJump(); return; }
   if (S.move === 'manual' && phase === 'walk' && y > GY - 70) hero.tx = camX + x; // tap the ground to walk there
 });
+// No zooming in Safari: its own pinch events, and a double tap that becomes a dblclick (the CSS covers the rest)
+['gesturestart', 'gesturechange', 'dblclick'].forEach(t => document.addEventListener(t, e => e.preventDefault(), { passive: false }));
 function holdBtn(el, fn) {
   el.addEventListener('pointerdown', e => { e.preventDefault(); audioInit(); el.classList.add('down'); fn(); });
   ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => el.addEventListener(t, () => el.classList.remove('down')));
@@ -469,7 +481,7 @@ function goTitle() {
   resize();
 }
 holdGate($('homeBtn'), 900, goTitle);
-holdGate($('grownBtn'), 1200, openSettings);
+holdGate($('grownBtn'), 1200, openGrownUps);
 $('setDone').addEventListener('click', () => { readSettings(); $('settings').hidden = true; applyControls(); });
 addEventListener('keydown', e => {
   if (!playing || isPaused()) return;
@@ -490,9 +502,11 @@ function applyControls() {
   $('controls').classList.toggle('manual', manual); $('moveGrp').hidden = !manual;
   if (!manual) { keys.left = keys.right = false; hero.tx = null; }
 }
-function isPaused() { return !$('settings').hidden || !$('studio').hidden; }
+function isPaused() { return !$('settings').hidden || !$('studio').hidden || !$('gate').hidden; }
 function openSettings() { keys.left = keys.right = false; fillSettingsUI(); $('settings').hidden = false; $('setDone').focus(); }
-holdGate($('gearBtn'), 700, openSettings);
+// Holding the button, then the grown-ups check (settings.js), then the settings
+function openGrownUps() { keys.left = keys.right = false; askGrownUp(openSettings); }
+holdGate($('gearBtn'), 700, openGrownUps);
 document.querySelectorAll('.mode').forEach(b => b.addEventListener('click', () => { S.mode = b.dataset.mode; saveSettings(); syncModeButtons(); }));
 document.querySelectorAll('.char').forEach(b => b.addEventListener('click', () => {
   audioInit(); S.char = b.dataset.char; saveSettings(); talk(['hi_' + S.char]); showLevels();

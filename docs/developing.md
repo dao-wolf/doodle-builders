@@ -74,14 +74,17 @@ playwright install chromium firefox webkit
 python tools/playtest/playtest.py              # robot plays nine scenarios (phone and desktop, all difficulties, every hero, Halloween, Christmas and the normal look)
 python tools/playtest/studio_test.py           # voice studio with a pretend microphone
 python tools/playtest/zero_size_test.py        # the game keeps drawing after it starts with no window size
-python tools/playtest/card_test.py             # question card: nothing overlaps it on any screen size, and no built-in letter sounds
+python tools/playtest/card_test.py             # question card: its size and the answers' sizes, nothing overlaps on any screen size, and no built-in letter sounds
 python tools/playtest/touch_test.py            # plays by touch alone: every control responds, and tapping never makes the browser load anything
+python tools/playtest/zoom_test.py             # nothing on any screen lets a double tap or a pinch zoom the page
+python tools/playtest/season_test.py           # the start screen's picture button: switched off stays off in the level, and a double tap counts once
+python tools/playtest/gate_test.py             # the grown-ups check before the settings: children can't get in, grown-ups can
 python tools/playtest/perf_test.py             # performance guard: frame rate, canvas size, music and hidden-page sound
 ```
 
-Each script starts its own local server, which serves the game under `/doodle-builders/` as GitHub Pages does. They fail on a page error or any file the game needs that doesn't load. Screenshots and the exported test voice pack go to `tools/playtest/out/`.
+Each script starts its own local server, which serves the game under `/doodle-builders/` as GitHub Pages does. They fail on a page error or any file the game needs that doesn't load. Screenshots and the exported test voice pack go to `tools/playtest/out/`. Tests that need the settings get past the grown-ups check with `pass_gate()` from `gate_test.py`.
 
-Every pull request runs all six on GitHub Actions (`.github/workflows/playtests.yml`). If they fail, `tools/playtest/out/` is attached to the run as `playtest-out`.
+Every pull request runs all nine on GitHub Actions (`.github/workflows/playtests.yml`). If they fail, `tools/playtest/out/` is attached to the run as `playtest-out`.
 
 ### Browsers
 
@@ -93,9 +96,9 @@ PLAYTEST_ENGINE=firefox python tools/playtest/touch_test.py   # or webkit; chrom
 
 | Engine | Which browsers use it | Tested on every pull request |
 |---|---|---|
-| Chromium | Chrome, Edge, Samsung Internet, Opera, Vivaldi and Brave, on Android and computers | all six tests |
-| WebKit | Safari, and every browser on an iPhone or iPad, including Chrome and Vivaldi | `playtest`, `card_test`, `touch_test` |
-| Firefox | Firefox on Android and computers | `playtest`, `card_test`, `touch_test` |
+| Chromium | Chrome, Edge, Samsung Internet, Opera, Vivaldi and Brave, on Android and computers | all nine tests |
+| WebKit | Safari, and every browser on an iPhone or iPad, including Chrome and Vivaldi | `playtest`, `card_test`, `touch_test`, `zoom_test`, `season_test`, `gate_test` |
+| Firefox | Firefox on Android and computers | `playtest`, `card_test`, `touch_test`, `zoom_test`, `season_test`, `gate_test` |
 
 These test the page, not the browser around it. A browser's own buttons and messages can't be seen by a robot, and neither can real phone speakers, microphones or heat, so also try a release by hand on an iPhone (Safari and Chrome) and on an Android phone or tablet (Chrome and Samsung Internet).
 
@@ -128,7 +131,7 @@ Every change goes through a pull request. A ruleset on `main` lets a pull reques
 
 | Check | From | What it checks |
 |---|---|---|
-| Robot playtests | GitHub Actions | all six playtests, and three of them again in Firefox and WebKit |
+| Robot playtests | GitHub Actions | all nine playtests, and six of them again in Firefox and WebKit |
 | CodeScene Code Health Review (main) | CodeScene | the Code Health of the changed code |
 | Socket Security: Pull Request Alerts | Socket | any package the pull request adds or changes |
 

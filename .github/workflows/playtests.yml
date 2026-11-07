@@ -49,6 +49,18 @@ jobs:
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: python tools/playtest/touch_test.py
 
+      - name: No-zoom test
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: python tools/playtest/zoom_test.py
+
+      - name: Season button test
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: python tools/playtest/season_test.py
+
+      - name: Grown-ups check test
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: python tools/playtest/gate_test.py
+
       - name: Performance guard
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: python tools/playtest/perf_test.py
@@ -59,7 +71,7 @@ jobs:
         run: |
           status=0
           for engine in firefox webkit; do
-            for test in playtest card_test touch_test; do
+            for test in playtest card_test touch_test zoom_test season_test gate_test; do
               echo "::group::$test in $engine"
               PLAYTEST_ENGINE=$engine python tools/playtest/$test.py || status=1
               echo "::endgroup::"

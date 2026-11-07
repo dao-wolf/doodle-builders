@@ -4,7 +4,7 @@ How to change the game's settings, what the seasonal themes do, and how to recor
 
 ## Settings
 
-On the start screen, press and hold **Grown-ups**. During a game, press and hold the **gear** button (the game pauses). Settings are saved on the device:
+On the start screen, press and hold **Grown-ups**. During a game, press and hold the **gear** button (the game pauses). Then type the number shown in words: "forty-seven" is 4 then 7. Young children can't read it and it is never spoken, so this keeps them out of the settings. Each time brings a new number, and three wrong answers in a row lock it for a minute. Settings are saved on the device:
 
 | Setting | Options |
 |---|---|
@@ -48,7 +48,7 @@ To see a look on another day, add `?season=halloween`, `?season=christmas` or `?
 Text-to-speech cannot say letter sounds properly, so the built-in voices don't say them: children see the letter and hear "Find". They hear the letter's sound only if you record it, so the best voice for teaching is yours.
 
 1. Open the game from GitHub Pages or `localhost` (see [Developing](developing.md#run-it-on-your-computer)). The microphone is blocked inside the Claude app viewer.
-2. On the start screen, **press and hold "Grown-ups"**, then **Open voice studio**.
+2. On the start screen, **press and hold "Grown-ups"**, type the number shown in words, then press **Open voice studio**.
 3. Pick a clip and press **RECORD**. Recording stops by itself when you stop talking; silence is trimmed and the volume is evened out. Press **Play** to check it, then **Next**.
 4. Start with the **Sounds** tab: they only play if you record them, and they are the ones children copy. Words, Numbers and Bob's lines are optional; anything else you don't record is said by Jenny.
 5. Press **Export voice pack** to save `my-voice.json`, put it in the `voice/` folder, then commit and push. Your voice now plays on every device that opens the game.

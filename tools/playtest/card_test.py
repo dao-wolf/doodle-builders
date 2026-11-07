@@ -1,9 +1,11 @@
 """Tests the question card and what the game says with it.
 
-On every screen size, answers and gems must stay clear of the card, the other buttons and the caption, and stay
-on screen, including after the screen turns mid-question. The built-in voices must say no letter sounds (neither
-says them properly), but a player's own recordings of them must still play. The card must show "Find", with no
-emojis, and on short screens the diamonds must stack (3 + 2), not run in one long row.
+On every screen size, answers and gems must stay clear of the card, the other buttons, the caption and each other,
+and stay on screen, including after the screen turns mid-question. The card is 80% of its first size and the
+answers 110% of theirs, and where a tap counts on an answer grows with it. Every letter must fit inside the card,
+tails (g, j, p, q, y) included, without touching "Find". The built-in voices must say no letter
+sounds (neither says them properly), but a player's own recordings of them must still play. The card must show
+"Find", with no emojis, and on short screens the diamonds must stack (3 + 2), not run in one long row.
 
     python tools/playtest/card_test.py
 """
@@ -32,16 +34,21 @@ CHECK = '''() => {
     ...[...document.querySelectorAll('button.big')].map(b => ['on-screen buttons', b])].filter(([, e]) => shown(e)).map(([n, e]) => [n, e.getBoundingClientRect()]);
   const hit = (a, b) => a.l < b.right && a.r > b.left && a.t < b.bottom && a.b > b.top;
   const box = (l, r, t, b) => ({ l: l * SC, r: r * SC, t: t * SC, b: b * SC });
-  const bad = new Set();
+  const bad = new Set(), K = ANSWER_K; // answers are drawn K times their first size
+  const bodyOf = it => it.kind === 'gem' ? box(it.x - 24 * K - 6, it.x + 24 * K + 6, it.y - 24 * K - 6, it.y + 24 * K + 6)
+    : box(it.x - 38 * K, it.x + 47 * K, it.y - 84 * K, it.y + 5);
   items.forEach(it => {
-    const gem = it.kind === 'gem';
-    const body = gem ? box(it.x - 30, it.x + 30, it.y - 30, it.y + 30) : box(it.x - 38, it.x + 47, it.y - 84, it.y + 5);
-    const arrow = gem ? box(it.x - 18, it.x + 18, it.y - 68, it.y - 30) : box(it.x - 18, it.x + 18, it.y - 124, it.y - 86);
+    const gem = it.kind === 'gem', body = bodyOf(it), tip = it.y - (gem ? 30 : 86) * K;
     things.forEach(([n, r]) => { if (hit(body, r)) bad.add((gem ? 'gem' : 'answer') + ' on ' + n); });
-    if (hit(arrow, things[0][1])) bad.add('hint arrow on card');
+    if (hit(box(it.x - 18, it.x + 18, tip - 38, tip), things[0][1])) bad.add('hint arrow on card');
     if (it.y + 5 > GY) bad.add('below the ground');
-    if (it.x + (gem ? 23 : 47) > W) bad.add('off the right edge');
-    items.forEach(o => { if (gem && o !== it && Math.hypot(o.x - it.x, o.y - it.y) < 46) bad.add('gem on gem'); });
+    if (it.x + (gem ? 23 : 47) * K > W) bad.add('off the right edge');
+    items.forEach(o => {
+      if (o === it) return;
+      if (gem && Math.hypot(o.x - it.x, o.y - it.y) < 46 * K) bad.add('gem on gem');
+      const ob = bodyOf(o), mine = box(it.x - 33 * K, it.x + 42 * K, it.y - 80 * K, it.y); // the block itself, without the float
+      if (!gem && hit(mine, { left: ob.l, right: ob.r, top: ob.t, bottom: ob.b })) bad.add('answer on answer');
+    });
   });
   const c = things[0][1], s = $('replay').getBoundingClientRect();
   if (c.left < 0 || c.right > innerWidth) bad.add('card off screen');
@@ -119,6 +126,100 @@ async def check_diamonds(browser, errors):
     await page.close()
 
 
+CARD_K, ANSWER_K = 0.8, 1.1  # the owner's sizes: the card 20% smaller, the answers 10% bigger, than first designed
+# The card's width and height over its first size (--card-k back at 1), for a number, a letter and five diamonds.
+# The speaker button keeps its size, so where it sits inside the card (short screens) it is left out of the width.
+CARD_SIZES = '''() => {
+  const p = $('prompt'), r = $('replay'), out = [];
+  const size = () => { const b = p.getBoundingClientRect(), inside = getComputedStyle(r).position === 'static';
+    return [b.width - (inside ? r.getBoundingClientRect().width : 0), b.height]; };
+  for (const [html, gems] of [['4', 0], [gHTML('igh'), 0], ['5', 5]]) {
+    setPrompt(html, gems); p.classList.remove('pop');
+    const shown = size(); p.style.setProperty('--card-k', '1'); const first = size(); p.style.removeProperty('--card-k');
+    out.push([shown[0] / first[0], shown[1] / first[1]]);
+  }
+  return out;
+}'''
+# Draws an answer block and a gem the way the game does, and at their first size (scale 1), four times larger so the
+# smoothed edges barely count, and returns the game's width and height over the first size's.
+ANSWER_SIZES = '''() => {
+  const measure = draw => {
+    const c = document.createElement('canvas'); c.width = c.height = 800; const g = c.getContext('2d'), saved = ctx, gy = GY;
+    ctx = g; g.scale(4, 4); GY = 9999; draw(); GY = gy; ctx = saved; // GY far below: no shadow on the measure
+    const d = g.getImageData(0, 0, 800, 800).data; let x0 = 800, x1 = -1, y0 = 800, y1 = -1;
+    for (let y = 0; y < 800; y++) for (let x = 0; x < 800; x++) if (d[(y * 800 + x) * 4 + 3]) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+    return [x1 - x0 + 1, y1 - y0 + 1];
+  };
+  const it = { x: 100, y: 150, born: now - 10, ph: 0, wob: 0, state: 'idle', cool: 0 };
+  const block = { ...it, kind: 'number', val: 4, col: BLOCK_COLS[0] }, gem = { ...it, kind: 'gem', hue: '#3fd0e8' };
+  const ratio = (a, b) => [a[0] / b[0], a[1] / b[1]];
+  return { block: ratio(measure(() => drawItem(block, 0)), measure(() => drawCube(100, 150, block.col, block, 1))),
+    gem: ratio(measure(() => drawItem(gem, 0)), measure(() => drawGem(100, 150, gem.hue, 1))) };
+}'''
+# A tap just beyond where an answer used to end now counts, and one beyond its new edge doesn't
+TAPS = '''() => {
+  const b = { x: 100, y: 150, kind: 'number' }, g = { x: 100, y: 150, kind: 'gem' };
+  return { block: [itemHit(b, 100 + 44 * 1.05, 110), itemHit(b, 100 + 44 * 1.15, 110)], gem: [itemHit(g, 100 + 40 * 1.05, 150), itemHit(g, 100 + 40 * 1.15, 150)] };
+}'''
+
+
+# Where each letter's ink (what is drawn, not its box) sits: its lowest point's distance from the inside of the card's
+# bottom edge, and whether it overlaps "Find" (above it on most screens, beside it on short ones). Every letter, in
+# every "Letters shown as" setting.
+INK = '''async () => {
+  await document.fonts.load('700 100px Andika'); await document.fonts.ready;
+  const g = document.createElement('canvas').getContext('2d'), p = $('prompt'), big = $('pBig'), out = [], was = S.letterCase;
+  for (const lc of ['lower', 'upper', 'both']) {
+    S.letterCase = lc;
+    for (const id of Object.keys(G)) {
+      setPrompt(gHTML(id)); p.classList.remove('pop');
+      const probe = document.createElement('span'); probe.style.cssText = 'display:inline-block;width:0;height:0'; big.appendChild(probe);
+      const base = probe.getBoundingClientRect().bottom; probe.remove(); // the line the letters sit on
+      let top = Infinity, bottom = -Infinity, left = Infinity, right = -Infinity;
+      big.childNodes.forEach(n => {
+        const f = getComputedStyle(n.nodeType === 1 ? n : big); g.font = `${f.fontWeight} ${f.fontSize} ${f.fontFamily}`;
+        const m = g.measureText(n.textContent), range = document.createRange(); range.selectNodeContents(n);
+        const x = range.getBoundingClientRect().left; // where the text starts
+        top = Math.min(top, base - m.actualBoundingBoxAscent); bottom = Math.max(bottom, base + m.actualBoundingBoxDescent);
+        left = Math.min(left, x - m.actualBoundingBoxLeft); right = Math.max(right, x + m.actualBoundingBoxRight);
+      });
+      const r = p.getBoundingClientRect(), edge = r.bottom - parseFloat(getComputedStyle(p).borderBottomWidth), w = $('pWord').getBoundingClientRect();
+      const onFind = left < w.right && right > w.left && top < w.bottom && bottom > w.top;
+      out.push([big.textContent, edge - bottom, onFind]);
+    }
+  }
+  S.letterCase = was;
+  return out;
+}'''
+
+
+async def check_letters_fit(browser, errors):
+    """Letters with a tail (g, j, p, q, y) must not reach the card's edge, and no letter may touch "Find"."""
+    for w, h in (320, 568), (390, 844), (844, 390), (1024, 768), (1440, 800):
+        page = await open_game(browser, (w, h), errors, f'letters fit {w}x{h}')
+        rows = await page.evaluate(INK)
+        low = sorted({shown for shown, below, _ in rows if below < 4})
+        high = sorted({shown for shown, _, on_find in rows if on_find})
+        if low: errors.append(f'{w}x{h}: {len(low)} letters reach within 4px of the card\'s bottom edge: {low[:10]}')
+        if high: errors.append(f'{w}x{h}: {len(high)} letters touch "Find": {high[:10]}')
+        await page.close()
+
+
+async def check_sizes(browser, errors):
+    near = lambda v, want: abs(v - want) <= 0.02
+    for w, h in (320, 568), (390, 844), (844, 390), (1024, 768), (1440, 800):
+        page = await open_game(browser, (w, h), errors, f'sizes {w}x{h}')
+        for what, (rw, rh) in zip(('number', 'letter', 'diamonds'), await page.evaluate(CARD_SIZES)):
+            if not (near(rw, CARD_K) and near(rh, CARD_K)): errors.append(f'{w}x{h} card with a {what}: {rw:.3f} x {rh:.3f} of its first size, expected {CARD_K}')
+        await page.close()
+    page = await open_game(browser, (390, 844), errors, 'answer sizes')
+    for what, (rw, rh) in (await page.evaluate(ANSWER_SIZES)).items():
+        if not (near(rw, ANSWER_K) and near(rh, ANSWER_K)): errors.append(f'{what}: {rw:.3f} x {rh:.3f} of its first size, expected {ANSWER_K}')
+    for what, counts in (await page.evaluate(TAPS)).items():
+        if counts != [True, False]: errors.append(f'taps around a {what} (just beyond its first size, beyond its new size): {counts}, expected [True, False]')
+    await page.close()
+
+
 async def voice_page(browser, errors):
     page = await open_game(browser, (390, 844), errors, 'voice')
     await page.evaluate(SPY)
@@ -176,7 +277,7 @@ async def check_device_voice(browser, errors):
     await page.close()
 
 
-CHECKS = check_layout, check_turning, check_diamonds, check_clips, check_letter_words, check_number_words, check_own_recording, check_device_voice
+CHECKS = check_layout, check_turning, check_diamonds, check_sizes, check_letters_fit, check_clips, check_letter_words, check_number_words, check_own_recording, check_device_voice
 
 
 async def main():
