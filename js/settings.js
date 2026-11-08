@@ -15,8 +15,6 @@ let S = Object.assign({}, DEFAULTS);
 try { const saved = JSON.parse(localStorage.getItem('bobs-outpost-settings') || 'null'); if (saved) S = Object.assign(S, saved); } catch (e) { /* storage unavailable */ }
 if (!DIFF[S.diff]) S.diff = 'easy';
 function saveSettings() { try { localStorage.setItem('bobs-outpost-settings', JSON.stringify(S)); } catch (e) { /* storage unavailable */ } }
-function pool() { let ids = WEEKS.filter(w => S.weeks.includes(w.id)).flatMap(w => w.g); if (!ids.length) ids = TERMS[0][1][0].slice(); return ids; }
-function taughtSoFar() { const last = Math.max(0, ...WEEKS.map((w, i) => S.weeks.includes(w.id) ? i : 0)); return WEEKS.slice(0, last + 1).flatMap(w => w.g); }
 function showG(id) {
   const g = G[id][0];
   if (S.letterCase === 'upper') return [g.toUpperCase()];
