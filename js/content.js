@@ -1,40 +1,10 @@
-// Learning content (Little Wandle Reception graphemes, numbers, spoken lines) and the outpost levels and themes.
+// Spoken lines, number words, block colours, and the outpost levels and their lands.
 'use strict';
 
-// ------------------------------------------------------------------ phonics + numbers content
-// Little Wandle Letters and Sounds Revised, Reception: new graphemes week by week.
-const G = {
-  s: ['s', 'sun', 'sss'], a: ['a', 'ant', 'a'], t: ['t', 'tiger', 't'], p: ['p', 'pig', 'p'],
-  i: ['i', 'insect', 'i'], n: ['n', 'nose', 'nnn'], m: ['m', 'moon', 'mmm'], d: ['d', 'dog', 'd'],
-  g: ['g', 'goat', 'g'], o: ['o', 'octopus', 'o'], c: ['c', 'cake', 'c'], k: ['k', 'kite', 'k'],
-  ck: ['ck', 'duck', 'ck'], e: ['e', 'egg', 'e'], u: ['u', 'umbrella', 'u'], r: ['r', 'rocket', 'rrr'],
-  h: ['h', 'house', 'h'], b: ['b', 'bus', 'b'], f: ['f', 'fish', 'fff'], l: ['l', 'lion', 'lll'],
-  ff: ['ff', 'cliff', 'fff'], ll: ['ll', 'bell', 'lll'], ss: ['ss', 'dress', 'sss'], j: ['j', 'juice', 'j'],
-  v: ['v', 'volcano', 'vvv'], w: ['w', 'web', 'w'], x: ['x', 'fox', 'ks'], y: ['y', 'yellow', 'y'],
-  z: ['z', 'zebra', 'zzz'], zz: ['zz', 'buzz', 'zzz'], qu: ['qu', 'queen', 'kw'], ch: ['ch', 'chick', 'ch'],
-  sh: ['sh', 'ship', 'shh'], th: ['th', 'think', 'th'], ng: ['ng', 'ring', 'ng'], nk: ['nk', 'wink', 'nk'],
-  ai: ['ai', 'rain', 'ay'], ee: ['ee', 'tree', 'ee'], igh: ['igh', 'light', 'eye'], oa: ['oa', 'boat', 'oh'],
-  oo_l: ['oo', 'boot', 'oo'], oo_s: ['oo', 'book', 'uh'], ar: ['ar', 'car', 'ar'], or: ['or', 'fork', 'or'],
-  ur: ['ur', 'turtle', 'ur'], ow: ['ow', 'cow', 'ow'], oi: ['oi', 'coin', 'oy'], ear: ['ear', 'ear', 'ear'],
-  air: ['air', 'chair', 'air'], er: ['er', 'hammer', 'er'],
-};
-const TERMS = [
-  ['Autumn 1', [['s', 'a', 't', 'p'], ['i', 'n', 'm', 'd'], ['g', 'o', 'c', 'k'], ['ck', 'e', 'u', 'r'], ['h', 'b', 'f', 'l']]],
-  ['Autumn 2', [['ff', 'll', 'ss', 'j'], ['v', 'w', 'x', 'y'], ['z', 'zz', 'qu', 'ch'], ['sh', 'th', 'ng', 'nk']]],
-  ['Spring 1', [['ai', 'ee', 'igh', 'oa'], ['oo_l', 'oo_s', 'ar', 'or'], ['ur', 'ow', 'oi', 'ear'], ['air', 'er']]],
-];
-const WEEKS = TERMS.flatMap(([t, ws]) => ws.map((g, i) => ({ id: `${t}-${i}`, term: t, g })));
-const SAME = [['c', 'k', 'ck'], ['f', 'ff'], ['l', 'll'], ['s', 'ss'], ['z', 'zz'], ['oo_l', 'oo_s'], ['x', 'ck'], ['qu', 'k']];
-const LOOKALIKE = { b: 'd p', d: 'b p', p: 'b d qu', qu: 'p', m: 'n w', n: 'm h u', u: 'n', w: 'm', i: 'l j', l: 'i', j: 'i y', y: 'j', h: 'n' };
-function clashes(a) {
-  const out = new Set([a]);
-  SAME.forEach(g => { if (g.includes(a)) g.forEach(x => out.add(x)); });
-  (LOOKALIKE[a] || '').split(' ').filter(Boolean).forEach(x => out.add(x));
-  return out;
-}
+// ------------------------------------------------------------------ numbers and spoken lines
+// The graphemes, weeks and question rules are in js/learning.js, which loads first.
 const NUMWORD = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
 const BLOCK_COLS = [[255, 120, 110], [255, 172, 82], [255, 214, 70], [116, 222, 128], [90, 178, 248], [160, 124, 250], [246, 136, 176]];
-const PLANS = { literacy: ['match'], numeracy: ['number', 'count'], both: ['match', 'number', 'count'] };
 
 const TEXT = {
   findit: 'Find', tryagain: 'Try again!', yes1: 'Yes!', yes2: 'Brilliant!', yes3: 'Well done!', yes4: 'Super!',

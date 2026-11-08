@@ -143,21 +143,8 @@ function setPrompt(bigHTML, gems = 0) {
 }
 const gHTML = id => { const s = showG(id); return s.length > 1 ? `<small>${s[0]}</small>${s[1]}` : s[0]; };
 function fillSlot(i) { const s = $('pSlots').children[i]; if (s) s.classList.add('on'); }
-function chooseGrapheme() {
-  const p = pool(); let opts = p.filter(x => !recent.includes(x)); if (!opts.length) opts = p;
-  const g = pick(opts); recent.push(g); if (recent.length > Math.min(4, p.length - 1)) recent.shift();
-  return g;
-}
-function distractors(target, n) {
-  const bad = clashes(target);
-  const ok = list => shuffle(list.filter((x, i, a) => a.indexOf(x) === i && !bad.has(x)));
-  let d = ok(pool());
-  if (d.length < n) d = d.concat(ok(taughtSoFar()).filter(x => !d.includes(x)));
-  if (d.length < n) d = d.concat(ok(Object.keys(G)).filter(x => !d.includes(x)));
-  const out = [];
-  for (const x of d) { if (out.every(y => !clashes(y).has(x))) out.push(x); if (out.length === n) break; }
-  return out;
-}
+// The learning rules are in js/learning.js. card_test.py swaps chooseGrapheme to ask for one letter it names.
+function chooseGrapheme() { const picked = pickGrapheme(S.weeks, recent); recent = picked.recent; return picked.grapheme; }
 // the space for answers: below the card and its shadow, above the on-screen buttons
 function belowCard() { const p = $('prompt'); return (p.offsetTop + p.offsetHeight + 6) / SC + 6; }
 function aboveButtons() { const c = $('controls'); return c.offsetHeight ? c.offsetTop / SC : GY; }
@@ -200,20 +187,18 @@ function promptParts() {
   return [];
 }
 function askQuestion(where, intro = []) {
-  const plan = PLANS[S.mode] || PLANS.both;
-  const type = plan[qi++ % plan.length];
+  const type = questionType(S.mode, qi++);
   hint = null; round = { type, where, got: 0 };
   if (type === 'match') {
     const g = chooseGrapheme(); round.target = g;
     setPrompt(gHTML(g));
-    makeOptions(shuffle([g, ...distractors(g, 2)]), 'grapheme');
+    makeOptions(letterAnswers(g, S.weeks), 'grapheme');
   } else if (type === 'number') {
-    const max = S.nums, n = 1 + Math.floor(Math.random() * max); round.target = n;
-    const others = shuffle(Array.from({ length: Math.max(max, 6) }, (_, i) => i + 1).filter(x => x !== n)).slice(0, 2);
-    setPrompt(String(n));
-    makeOptions(shuffle([n, ...others]), 'number');
+    const q = numberQuestion(S.nums); round.target = q.target;
+    setPrompt(String(q.target));
+    makeOptions(q.answers, 'number');
   } else {
-    const n = S.nums === 10 ? 3 + Math.floor(Math.random() * 5) : 2 + Math.floor(Math.random() * 4); round.n = n;
+    const n = gemsToCount(S.nums); round.n = n;
     setPrompt(String(n), n);
     makeGems(n);
   }

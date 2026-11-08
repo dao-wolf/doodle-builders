@@ -23,6 +23,10 @@ jobs:
           cache: pip
           cache-dependency-path: tools/playtest/requirements.txt
 
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+
       - name: Install Playwright, Chromium, Firefox and WebKit
         id: install
         run: |
@@ -32,6 +36,11 @@ jobs:
       # Each script starts its own local server.
       - name: Game playtest
         run: python tools/playtest/playtest.py
+
+      # The learning rules in js/learning.js, in Node (see docs/domain.md)
+      - name: Unit tests
+        if: ${{ !cancelled() }}
+        run: node --test "tests/**/*.test.js"
 
       - name: Voice studio test
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}

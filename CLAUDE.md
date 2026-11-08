@@ -4,7 +4,7 @@ A static HTML, canvas and JavaScript learning game for children aged 2 to 5 (pho
 
 ## Every change
 
-- Run the nine playtests before and after (`playtest.py`, `studio_test.py`, `zero_size_test.py`, `perf_test.py`, `card_test.py`, `touch_test.py`, `zoom_test.py`, `season_test.py` and `gate_test.py` in `tools/playtest/`). They are the only tests; there are no unit tests yet. Every pull request also runs them on GitHub Actions, and six of them again in Firefox and WebKit.
+- Run the nine playtests before and after (`playtest.py`, `studio_test.py`, `zero_size_test.py`, `perf_test.py`, `card_test.py`, `touch_test.py`, `zoom_test.py`, `season_test.py` and `gate_test.py` in `tools/playtest/`). Run the unit tests too (`node --test "tests/**/*.test.js"`). Every pull request also runs them on GitHub Actions, and six of them again in Firefox and WebKit.
 - For any change to drawing, the loop or sound, also run `tools/playtest/perf_report.py` before and after, in both engines (default Chromium, and `--engine webkit` for Safari on iPhones and iPads), and say what it showed.
 - Work on a branch and open a pull request: `main` refuses direct pushes. A pull request merges only once three checks pass: Robot playtests, CodeScene and Socket Security (see [docs/developing.md](docs/developing.md#merging-into-main)).
 - Don't let Code Health drop; the rules are in `.codescene/code-health-rules.json`.
@@ -13,6 +13,7 @@ A static HTML, canvas and JavaScript learning game for children aged 2 to 5 (pho
 ## How the code is built (easy to break)
 
 - **No build step, no modules.** Plain `<script>` files share one global scope, and the load order at the bottom of `index.html` matters: `util, content, settings, seasons, art, audio, voice, game, render, studio, main`. A top-level `const` used before its file loads throws. Switching to native ES modules is the next planned change.
+- Question and curriculum rules live in `js/learning.js`, which never touches the page; `game.js` only shows them.
 - **Game flow** is a phase state machine in `js/game.js`: `menu → intro → walk → ask → reward → … → arrive → bask → carry → place → building → done`. Use `later()` for delayed game steps, not `setTimeout`: restarting a level bumps `gen`, which cancels them.
 - **Coordinates** are logical units scaled by `SC`. The hero, Nibblers and decorations are in world x (subtract `camX` to draw); question blocks, gems, particles and flying pieces are in screen coordinates.
 - **Voice priority** (`js/voice.js`): the player's own recording (IndexedDB), then `voice/my-voice.json`, then `voice/jenny.json`, then the device's speech engine. If any clip in a line is missing, the whole line falls back to the device voice. Letter sounds are the exception: they come only from the player's own recordings or `my-voice.json`, and are left out of the line otherwise.

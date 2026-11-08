@@ -21,7 +21,8 @@ Then open <http://localhost:8000>. The microphone works on `localhost`, so you c
 index.html            the page: HUD, buttons, menus, settings and voice studio
 css/style.css         all styles
 js/util.js            canvas setup, constants, helpers
-js/content.js         letters, numbers, spoken lines, the four outposts and their lands
+js/learning.js        the learning rules: graphemes, weeks, and what to ask (no page access; see docs/domain.md)
+js/content.js         spoken lines, number words, the four outposts and their lands
 js/settings.js        grown-up settings (saved in localStorage)
 js/seasons.js         seasonal themes: when Halloween and Christmas show, and how they change the lands and outposts
 js/art.js             pixel textures, outpost blocks, the heroes (Bob, Mr Henry, Dragon Fly) and the Nibblers
@@ -34,11 +35,12 @@ js/main.js            main loop and start-up
 voice/jenny.json      the built-in voice (Jenny (Dioco), made with Piper), one base64 MP3 per clip
 voice/my-voice.json   your voice pack, if you add one (optional)
 tools/voice/          scripts that made jenny.json (see tools/voice/README.md)
+tests/                unit tests for js/learning.js, run in Node
 tools/playtest/       automated playthrough, voice studio, zero-size and performance tests
 docs/                 these guides, the README screenshot and the seasonal screenshots
 ```
 
-The scripts load in this order at the bottom of `index.html`, and they share one global scope, so the order matters: `util, content, settings, seasons, art, audio, voice, game, render, studio, main`.
+The scripts load in this order at the bottom of `index.html`, and they share one global scope, so the order matters: `util, learning, content, settings, seasons, art, audio, voice, game, render, studio, main`.
 
 ## The `TEXT` and `LEVELS` registries
 
@@ -68,6 +70,18 @@ Draw from photos of the original drawing or model, but keep the photos out of th
 
 ## Testing
 
+### Unit tests
+
+The learning rules in `js/learning.js` have unit tests in `tests/`, written in the words in [The learning domain](domain.md). They need Node 22 or later and nothing else:
+
+```bash
+node --test "tests/**/*.test.js"
+```
+
+`tests/acceptance/` says what the questions must do, from the outside; `tests/unit/` tests each rule on its own. Write the test before the change (see [Changing a rule](domain.md#changing-a-rule)).
+
+### Playtests
+
 ```bash
 pip install -r tools/playtest/requirements.txt
 playwright install chromium firefox webkit
@@ -84,7 +98,7 @@ python tools/playtest/perf_test.py             # performance guard: frame rate, 
 
 Each script starts its own local server, which serves the game under `/doodle-builders/` as GitHub Pages does. They fail on a page error or any file the game needs that doesn't load. Screenshots and the exported test voice pack go to `tools/playtest/out/`. Tests that need the settings get past the grown-ups check with `pass_gate()` from `gate_test.py`.
 
-Every pull request runs all nine on GitHub Actions (`.github/workflows/playtests.yml`). If they fail, `tools/playtest/out/` is attached to the run as `playtest-out`.
+Every pull request runs the unit tests and all nine playtests on GitHub Actions (`.github/workflows/playtests.yml`). If they fail, `tools/playtest/out/` is attached to the run as `playtest-out`.
 
 ### Browsers
 
@@ -131,7 +145,7 @@ Every change goes through a pull request. A ruleset on `main` lets a pull reques
 
 | Check | From | What it checks |
 |---|---|---|
-| Robot playtests | GitHub Actions | all nine playtests, and six of them again in Firefox and WebKit |
+| Robot playtests | GitHub Actions | the unit tests, all nine playtests, and six of the playtests again in Firefox and WebKit |
 | CodeScene Code Health Review (main) | CodeScene | the Code Health of the changed code |
 | Socket Security: Pull Request Alerts | Socket | any package the pull request adds or changes |
 
