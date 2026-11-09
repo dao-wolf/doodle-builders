@@ -4,7 +4,7 @@ A static HTML, canvas and JavaScript learning game for children aged 2 to 5 (pho
 
 ## Every change
 
-- Run the nine playtests before and after (`playtest.py`, `studio_test.py`, `zero_size_test.py`, `perf_test.py`, `card_test.py`, `touch_test.py`, `zoom_test.py`, `season_test.py` and `gate_test.py` in `tools/playtest/`). Run the unit tests too (`node --test "tests/**/*.test.js"`). Every pull request also runs them on GitHub Actions, and six of them again in Firefox and WebKit.
+- Run the ten playtests before and after (`playtest.py`, `studio_test.py`, `zero_size_test.py`, `perf_test.py`, `card_test.py`, `touch_test.py`, `zoom_test.py`, `season_test.py`, `gate_test.py` and `den_test.py` in `tools/playtest/`). Run the unit tests too (`node --test "tests/**/*.test.js"`). Every pull request also runs them on GitHub Actions, and seven of them again in Firefox and WebKit.
 - For any change to drawing, the loop or sound, also run `tools/playtest/perf_report.py` before and after, in both engines (default Chromium, and `--engine webkit` for Safari on iPhones and iPads), and say what it showed.
 - Work on a branch and open a pull request: `main` refuses direct pushes. A pull request merges only once three checks pass: Robot playtests, CodeScene and Socket Security (see [docs/developing.md](docs/developing.md#merging-into-main)).
 - Don't let Code Health drop; the rules are in `.codescene/code-health-rules.json`.
@@ -12,7 +12,7 @@ A static HTML, canvas and JavaScript learning game for children aged 2 to 5 (pho
 
 ## How the code is built (easy to break)
 
-- **No build step, no modules.** Plain `<script>` files share one global scope, and the load order at the bottom of `index.html` matters: `util, learning, content, settings, seasons, art, audio, voice, game, render, studio, main`. A top-level `const` used before its file loads throws. Switching to native ES modules is the next planned change.
+- **No build step, no modules.** Plain `<script>` files share one global scope, and the load order at the bottom of `index.html` matters: `util, learning, calendar, content, settings, seasons, art, audio, voice, game, render, den, studio, main`. A top-level `const` used before its file loads throws. Switching to native ES modules is the next planned change.
 - Question and curriculum rules live in `js/learning.js`, which never touches the page; `game.js` only shows them.
 - **Game flow** is a phase state machine in `js/game.js`: `menu → intro → walk → ask → reward → … → arrive → bask → carry → place → building → done`. Use `later()` for delayed game steps, not `setTimeout`: restarting a level bumps `gen`, which cancels them.
 - **Coordinates** are logical units scaled by `SC`. The hero, Nibblers and decorations are in world x (subtract `camX` to draw); question blocks, gems, particles and flying pieces are in screen coordinates.
@@ -30,6 +30,7 @@ A static HTML, canvas and JavaScript learning game for children aged 2 to 5 (pho
 - Sizes: the question card is drawn at `--card-k` (0.8, in `css/style.css`) and the answers at `ANSWER_K` (1.1, in `js/game.js`) of their first sizes. Change a size there, not one dimension at a time; `card_test.py` checks both.
 - The page never zooms. Every element sets its own `touch-action` (Safari on iPhones doesn't pass body's on to positioned elements, so a double tap zoomed and couldn't be undone). `zoom_test.py` checks every screen.
 - Settings sit behind a grown-ups check after the hold: a number from 21 to 99 shown only in words, never spoken, new each time, and locked for a minute after three wrong answers. A 4 year old got past the hold alone, so don't make the check easier.
+- The den (`js/den.js`, see [docs/den.md](docs/den.md)) must stay free of failure: no score, no timer, nothing to forget, no sad hero, and picture-only controls at least 44 px.
 - Defaults are in `DEFAULTS` (`js/settings.js`): game mode Both, Autumn 1 sounds, lowercase letters, numbers 1 to 5, movement "I steer", difficulty Easy, voice Natural (Jenny) with own recordings first. Change them only on purpose.
 - The "Jenny (Dioco)" credit must stay visible (licence requirement).
 - British English and plain words in all copy, comments and docs.
