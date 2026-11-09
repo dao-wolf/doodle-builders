@@ -14,6 +14,8 @@ or its picture button doesn't switch the look off and on.
     PLAYTEST_ENGINE=firefox python tools/playtest/playtest.py   # in Firefox (or webkit, Safari's engine)
 """
 import asyncio, json, os, sys, time
+from dataclasses import dataclass, field
+from typing import Any, NamedTuple, Optional
 from playwright.async_api import async_playwright
 import localsite
 from gate_test import pass_gate
@@ -36,6 +38,20 @@ SCENARIOS = {  # name: (width, height, hero, difficulty, level, movement, style[
     'lava-lagoon-halloween': (1280, 720, 'lava', 'hard', 3, 'auto', 'lazy', ('season=halloween', 'halloween'), {'lavaColour': 'lagoon'}),
     'bob-easter': (1280, 720, 'bob', 'easy', 1, 'auto', 'defend', ('season=easter', 'easter')),
 }
+
+
+class Scenario(NamedTuple):
+    """One row of SCENARIOS, with a name for each field."""
+    w: int
+    h: int
+    hero: str
+    diff: str
+    level: int
+    move: str  # 'manual' (arrow keys) or 'auto'
+    style: str  # 'defend' (blows Nibblers away quickly) or 'lazy' (slow to, unless one has stolen a piece)
+    season: tuple = ('', None)  # (the query to add to the address, the look the start screen should show, or None to skip the check)
+    settings: Optional[dict] = None  # extra settings to save
+
 
 STATE = '''() => ({ phase, type: round && round.type, target: round && round.target, SC, status: status.slice(), GY, camX,
   heroX: hero.x - camX,
@@ -110,61 +126,153 @@ def active_nibblers(st, w):
     return [n for n in st['nibs'] if n['state'] in ACTIVE_STATES or fleeing_nearby(n, st, w)]
 
 
-async def play(browser, name, w, h, hero, diff, level, move, style, season=('', None), settings=None):
-    page = await browser.new_page(viewport={'width': w, 'height': h}, has_touch=True)
-    errors = []
+def has_thief(active):
+    """Whether one of the Nibblers has stolen a piece: it gloats over it, then runs off with it."""
+    return any(n['state'] in ('gloat', 'flee') for n in active)
+
+
+def blast_delay(style, active):
+    """Seconds a Nibbler may be about before the robot blows it away: at once when defending, soon for a thief, else late."""
+    if style == 'defend': return 0.4
+    return 0.5 if has_thief(active) else 4.5
+
+
+def checked(log):
+    """The log entries that report a check (a timeline point has its time in seconds first)."""
+    return [x for x in log if not isinstance(x[0], float)]
+
+
+def timeline(log):
+    """The first 30 timeline points: the seconds in, the phase and the first letter of each piece's status."""
+    return [x for x in log if isinstance(x[0], float)][:30]
+
+
+async def open_scenario(browser, name, scenario, errors):
+    """Opens the game with the scenario's settings, checks the start screen's look, then picks the hero and the level."""
+    page = await browser.new_page(viewport={'width': scenario.w, 'height': scenario.h}, has_touch=True)
     localsite.watch(page, errors, PORT, name)
-    await page.goto(f'{localsite.address(PORT)}index.html?speed={SPEED}&{season[0]}')
-    saved = stored_settings(diff, move, settings)
+    await page.goto(f'{localsite.address(PORT)}index.html?speed={SPEED}&{scenario.season[0]}')
+    saved = stored_settings(scenario.diff, scenario.move, scenario.settings)
     await page.evaluate(f"localStorage.setItem('bobs-outpost-settings', JSON.stringify({saved}))")
     await page.reload(); await page.wait_for_timeout(800)
-    await check_season(page, name, season, errors)
-    await page.click(f'.char[data-char="{hero}"]'); await page.wait_for_timeout(400)
-    await page.click(f'.lvl[data-lvl="{level}"]')
-    shots, log, seen, last, t0, holding = set(), [], None, None, time.time(), False
-    tested_pause = move != 'manual'  # only manual scenarios have the pause check
+    await check_season(page, name, scenario.season, errors)
+    await page.click(f'.char[data-char="{scenario.hero}"]'); await page.wait_for_timeout(400)
+    await page.click(f'.lvl[data-lvl="{scenario.level}"]')
+    return page
 
-    async def shot(tag):
-        if tag not in shots:
-            shots.add(tag); await page.screenshot(path=f'{OUT}/{name}_{tag}.png')
 
-    while time.time() - t0 < 400:
-        st = await page.evaluate(STATE)
+@dataclass
+class Robot:
+    """The robot player of one scenario: its page, and what it remembers from one look at the game to the next."""
+    page: Any
+    name: str
+    scenario: Scenario
+    errors: list
+    shots: set = field(default_factory=set, init=False)  # the screenshot tags already taken
+    log: list = field(default_factory=list, init=False)  # timeline points and check results
+    seen: Optional[float] = field(default=None, init=False)  # when the Nibblers now in play were first seen, or 0.6 s after the last blast; None when there are none
+    last: Optional[list] = field(default=None, init=False)  # the pieces' status at the last look
+    holding: bool = field(default=False, init=False)  # whether the right arrow key is down
+    t0: float = field(init=False)  # when the robot started
+    tested_pause: bool = field(init=False)  # only manual scenarios have the pause check
+
+    def __post_init__(self): self.t0 = time.time(); self.tested_pause = self.scenario.move != 'manual'
+
+    async def shot(self, tag):
+        if tag not in self.shots:
+            self.shots.add(tag); await self.page.screenshot(path=f'{OUT}/{self.name}_{tag}.png')
+
+    def note_status(self, st):
+        """Adds a timeline point whenever the pieces' status changes."""
+        if st['status'] != self.last:
+            self.log.append((round(time.time() - self.t0, 1), st['phase'], ''.join(x[0] for x in st['status']))); self.last = st['status']
+
+    async def defend(self, st):
+        """Deals with the Nibblers in play, and forgets them once there are none."""
+        active = active_nibblers(st, self.scenario.w)
+        if active: await self.meet_nibblers(active)
+        else: self.seen = None
+
+    async def meet_nibblers(self, active):
+        """Takes a screenshot when Nibblers first show, and blows them away once they have been about long enough."""
+        if self.seen is None:
+            self.seen = time.time(); await self.shot('nibbler')
+        if time.time() - self.seen > blast_delay(self.scenario.style, active): await self.blast()
+
+    async def blast(self):
+        await self.page.click('#actBtn', force=True); await self.page.wait_for_timeout(250)
+        await self.shot('blast'); self.seen = time.time() + 0.6
+
+    async def walk(self, st):
+        """In manual mode holds the right arrow key while the hero walks; otherwise lets it go."""
+        if st['phase'] == 'walk' and self.scenario.move == 'manual': await self.keep_walking(st)
+        else: await self.release()
+
+    async def keep_walking(self, st):
+        # once the first piece is held: hold the gear button, and the game must pause
+        if not self.tested_pause and st['status'][0] == 'held': await self.check_pause(st)
+        await self.press()
+        await self.shot('walk')
+
+    async def check_pause(self, st):
+        self.tested_pause = True
+        await self.release()
+        await check_pause_and_tap(self.page, st, self.shot, self.log, self.errors)
+
+    async def press(self):
+        if not self.holding: await self.page.keyboard.down('ArrowRight'); self.holding = True
+
+    async def release(self):
+        if self.holding: await self.page.keyboard.up('ArrowRight'); self.holding = False
+
+    async def respond(self, st):
+        """Answers the question, or taps the piece being carried into place."""
+        if st['phase'] in ('ask', 'bask'): await self.ask(st)
+        elif st['phase'] == 'place' and st['box']: await self.place(st)
+
+    async def ask(self, st):
+        await self.shot('ask_' + st['phase'] + '_' + (st['type'] or ''))
+        await answer(self.page, st)
+        await self.page.wait_for_timeout(350)
+
+    async def place(self, st):
+        await self.shot('place'); b = st['box']; await self.page.wait_for_timeout(300)
+        await self.page.mouse.click(b['cx'] * st['SC'], b['cy'] * st['SC'])
+
+    async def step(self):
+        """One look at the game, and what the robot does about it. True once the outpost is finished."""
+        st = await self.page.evaluate(STATE)
         if st['fin']:
-            await page.wait_for_timeout(300); await shot('finish'); break
-        sc = st['SC']
-        if st['status'] != last:
-            log.append((round(time.time() - t0, 1), st['phase'], ''.join(x[0] for x in st['status']))); last = st['status']
-        active = active_nibblers(st, w)
-        if active:
-            if seen is None:
-                seen = time.time(); await shot('nibbler')
-            thief = any(n['state'] in ('gloat', 'flee') for n in active)
-            if time.time() - seen > (0.4 if style == 'defend' else (0.5 if thief else 4.5)):
-                await page.click('#actBtn', force=True); await page.wait_for_timeout(250); await shot('blast'); seen = time.time() + 0.6
-        else:
-            seen = None
-        if st['phase'] == 'walk' and move == 'manual':
-            if not tested_pause and st['status'][0] == 'held':  # hold the gear button: the game must pause
-                tested_pause = True
-                if holding: await page.keyboard.up('ArrowRight'); holding = False
-                await check_pause_and_tap(page, st, shot, log, errors)
-            if not holding:
-                await page.keyboard.down('ArrowRight'); holding = True
-            await shot('walk')
-        elif holding:
-            await page.keyboard.up('ArrowRight'); holding = False
-        if st['phase'] in ('ask', 'bask'):
-            await shot('ask_' + st['phase'] + '_' + (st['type'] or ''))
-            await answer(page, st)
-            await page.wait_for_timeout(350)
-        elif st['phase'] == 'place' and st['box']:
-            await shot('place'); b = st['box']; await page.wait_for_timeout(300); await page.mouse.click(b['cx'] * sc, b['cy'] * sc)
-        await page.wait_for_timeout(120)
+            await self.page.wait_for_timeout(300); await self.shot('finish')
+            return True
+        self.note_status(st)
+        await self.defend(st)
+        await self.walk(st)
+        await self.respond(st)
+        await self.page.wait_for_timeout(120)
+        return False
+
+    async def run(self):
+        """Plays until the outpost is finished or 400 seconds have passed."""
+        finished = False
+        while not finished and time.time() - self.t0 < 400:
+            finished = await self.step()
+
+    def report(self, st):
+        """Prints how the scenario ended, then its check results and timeline."""
+        print(f"{self.name}: finished={st['fin']} pieces={st['status']} | {st['finText']} | errors={self.errors[:3]} | {round(time.time() - self.t0)}s")
+        print('   ', checked(self.log) or '', ' timeline:', timeline(self.log))
+
+
+async def play(browser, name, scenario):
+    """Plays one scenario; True if the outpost was finished and nothing went wrong."""
+    errors = []
+    page = await open_scenario(browser, name, scenario, errors)
+    robot = Robot(page, name, scenario, errors)
+    await robot.run()
     st = await page.evaluate(STATE)
-    if not tested_pause: errors.append('never got to the pause check')
-    print(f"{name}: finished={st['fin']} pieces={st['status']} | {st['finText']} | errors={errors[:3]} | {round(time.time() - t0)}s")
-    print('   ', [x for x in log if not isinstance(x[0], float)] or '', ' timeline:', [x for x in log if isinstance(x[0], float)][:30])
+    if not robot.tested_pause: errors.append('never got to the pause check')
+    robot.report(st)
     await page.close()
     return st['fin'] and not errors
 
@@ -174,7 +282,7 @@ async def main(names):
     srv = localsite.serve(PORT)
     async with async_playwright() as p:
         browser = await localsite.launch(p, '--autoplay-policy=no-user-gesture-required')
-        results = await asyncio.gather(*[play(browser, n, *SCENARIOS[n]) for n in names])
+        results = await asyncio.gather(*[play(browser, n, Scenario(*SCENARIOS[n])) for n in names])
         await browser.close()
     srv.shutdown()
     return all(results)
