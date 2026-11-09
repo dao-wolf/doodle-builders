@@ -38,7 +38,7 @@ Each rule has an outside-in test in `tests/acceptance/questions.test.js`, writte
 flowchart LR
   GU["Grown-ups<br/>settings.js"] -- "chosen weeks, game mode, number range" --> Q
   C["Curriculum<br/>learning.js"] --> Q["Questions<br/>learning.js"]
-  Q -- "the next question" --> P["Play<br/>game.js, render.js, art.js, seasons.js"]
+  Q -- "the next question" --> P["Play<br/>game.js, render.js, art.js, seasons.js, den.js"]
   P -- "what to say" --> V["Voice<br/>voice.js, audio.js, studio.js"]
 ```
 
@@ -46,7 +46,7 @@ flowchart LR
 |---|---|---|---|
 | Curriculum | The graphemes, the weeks and which graphemes clash | `js/learning.js` | unit tests |
 | Questions | What to ask next, and which answers to offer | `js/learning.js` | unit tests |
-| Play | The journey, Nibblers, building, drawing and seasons | `js/game.js`, `js/render.js`, `js/art.js`, `js/seasons.js`, `LEVELS` and `THEMES` in `js/content.js` | playtests |
+| Play | The journey, Nibblers, building, drawing, seasons and the den | `js/game.js`, `js/render.js`, `js/art.js`, `js/seasons.js`, `js/calendar.js` (season dates, unit tests), `js/den.js`, `LEVELS` and `THEMES` in `js/content.js` | playtests, `calendar.test.js` |
 | Voice | Spoken lines, own recordings and the voice studio | `js/voice.js`, `js/audio.js`, `js/studio.js`, `TEXT` in `js/content.js` | playtests |
 | Grown-ups | The settings and the grown-ups check | `js/settings.js` | playtests |
 

@@ -9,6 +9,10 @@
   --sun: #ffd23f;
   --water: #9fe7ff;
   --muted: #6a5f7d;
+  --lava-sunny: #ffd35a;
+  --lava-sunny-comb: #ff5a3c;
+  --lava-lagoon: #7bd86e;
+  --lava-lagoon-comb: #2f8fe0;
   --shadow: rgba(43, 33, 64, .35);
   --display: "Silkscreen", "Trebuchet MS", system-ui, sans-serif;
   --letters: "Andika", "Comic Sans MS", "Segoe UI", system-ui, sans-serif;
@@ -86,6 +90,7 @@ button:focus-visible, input:focus-visible + span { outline: 4px solid var(--sun)
 #actBtn { width: 150px; height: 96px; background: var(--water); font-size: 21px; }
 #actBtn[data-hero="henry"] { background: #cdeaa0; }
 #actBtn[data-hero="dragon"] { background: #ffb38a; }
+#actBtn[data-hero="lava"] { background: #ffc46b; }
 .arrow.nudge { animation: urge .8s ease-in-out infinite; background: var(--sun); }
 #actBtn.urge { animation: urge .7s ease-in-out infinite; background: #ff9fc0; }
 @keyframes urge { 50% { transform: scale(1.08) rotate(-2deg); } }
@@ -99,12 +104,14 @@ button:focus-visible, input:focus-visible + span { outline: 4px solid var(--sun)
 .panel h2 { font-family: var(--display); font-weight: 700; font-size: 22px; margin: 0; text-wrap: balance; }
 .panel p { margin: 0; font-family: var(--letters); font-size: 15px; line-height: 1.45; }
 .label { font-family: var(--display); font-weight: 700; font-size: 13px; letter-spacing: .04em; margin: 0; }
-.chars { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.chars { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .char { border: 4px solid var(--ink); box-shadow: 0 7px 0 var(--ink); background: #dff1ff; padding: 6px 6px 10px; display: grid; gap: 4px; justify-items: center; min-width: 0; }
 .char:active { transform: translateY(5px); box-shadow: 0 2px 0 var(--ink); }
 .char canvas { width: 100%; max-width: 170px; aspect-ratio: 170 / 150; height: auto; display: block; }
 .char b { font-family: var(--display); font-weight: 700; font-size: clamp(11px, 3.2vw, 16px); }
 .char small { font-family: var(--letters); font-size: 13px; color: var(--muted); }
+@media (max-width: 599px) { #title .panel { gap: 9px; padding: 14px 16px 16px; } .char { padding: 4px 4px 7px; gap: 2px; } .char canvas { width: 88%; } } /* two rows of heroes make the start screen taller: tighten it so a phone held upright still shows Grown-ups */
+@media (min-width: 600px) { #title .panel { max-width: 600px; } .chars { grid-template-columns: repeat(4, minmax(0, 1fr)); } .char b { font-size: 13px; } } /* four heroes in a row on wide screens, two by two on a phone held upright */
 .modes { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
 .mode { border: 3px solid var(--ink); box-shadow: 0 4px 0 var(--ink); padding: 6px 12px; font-family: var(--letters); font-weight: 700; font-size: 17px; background: #fff; }
 .mode[aria-pressed="true"] { background: var(--ink); color: var(--card); }
@@ -127,6 +134,8 @@ button:focus-visible, input:focus-visible + span { outline: 4px solid var(--sun)
 .lvl .lock { position: absolute; left: 50%; top: 38%; transform: translate(-50%, -50%); width: 44px; height: 44px; display: none; }
 .lvl[disabled] .lock { display: block; }
 .diffchip { font-family: var(--letters); font-weight: 700; font-size: 13px; color: var(--muted); }
+/* a phone held sideways is short: the four outposts go in one row, so Back and Den stay in view without scrolling */
+@media (orientation: landscape) and (max-height: 600px) { #levels .panel { max-width: 800px; gap: 10px; padding: 14px 18px 16px; } .lvls { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; } }
 
 /* seasonal look: the picture button on the start screen switches it off and on */
 #title .panel { position: relative; }
@@ -134,12 +143,17 @@ button:focus-visible, input:focus-visible + span { outline: 4px solid var(--sun)
   background: #fff; display: grid; place-items: center; z-index: 1; }
 #seasonBtn:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--ink); }
 #seasonBtn .pic { width: 52px; height: 52px; display: none; }
-#seasonBtn[data-season="halloween"] .halloween, #seasonBtn[data-season="christmas"] .christmas { display: block; }
+#seasonBtn[data-season="halloween"] .halloween, #seasonBtn[data-season="christmas"] .christmas, #seasonBtn[data-season="easter"] .easter { display: block; }
 #seasonBtn[aria-pressed="false"] .pic { filter: grayscale(1); opacity: .45; }
 #seasonBtn[aria-pressed="true"] { animation: wiggle 2.6s ease-in-out infinite; }
 @keyframes wiggle { 0%, 70%, 100% { transform: rotate(0); } 80% { transform: rotate(-8deg); } 90% { transform: rotate(6deg); } }
 body[data-season="halloween"] #seasonBtn { background: #3d2c6e; }
 body[data-season="christmas"] #seasonBtn { background: #dff1ff; }
+body[data-season="easter"] #seasonBtn { background: #e9f7ff; }
+body[data-season="easter"] .overlay { background: rgba(255, 214, 236, .30); }
+body[data-season="easter"] .panel h1 { color: #2f9e6a; }
+body[data-season="easter"] .panel h1 span { color: #d6479a; }
+body[data-season="easter"] .char { background: #fff3c4; }
 body[data-season="halloween"] .overlay { background: rgba(46, 22, 84, .38); }
 body[data-season="halloween"] .panel h1 span { color: #f07a1a; }
 body[data-season="halloween"] .char { background: #ece0ff; }
@@ -150,6 +164,31 @@ body[data-season="halloween"] #title .panel::before { display: block;
   background: linear-gradient(90deg, #f07a1a 0 12px, transparent 12px 16px, #6b3fa0 16px 28px, transparent 28px 32px) 0 0 / 32px 11px; }
 body[data-season="christmas"] #title .panel::before { display: block; border-top: 2px solid #2b5e2e; height: 9px;
   background: linear-gradient(90deg, transparent 0 4px, #ff5a5a 4px 10px, transparent 10px 16px, #ffd23f 16px 22px, transparent 22px 28px, #5ad46a 28px 34px, transparent 34px 40px, #5ab4ff 40px 46px, transparent 46px 48px) 0 0 / 48px 9px; }
+body[data-season="easter"] #title .panel::before { display: block; border-top: 2px solid #7c522e;
+  background: linear-gradient(90deg, #ff9ec4 0 12px, transparent 12px 16px, #ffe27a 16px 28px, transparent 28px 32px, #9fe0b4 32px 44px, transparent 44px 48px, #b9a5ff 48px 60px, transparent 60px 64px) 0 0 / 64px 11px; }
+
+/* the den: a meadow where a child looks after their hero. Every control is a picture. */
+#den { position: fixed; inset: 0; pointer-events: none; }
+#den > * { pointer-events: auto; }
+.denbtn { width: 88px; height: 88px; background: #fff; }
+.denbtn svg { width: 52px; height: 52px; }
+.denbtn[aria-pressed="true"] { background: var(--sun); }
+#denFeed { background: #ffd9d9; }
+#denPlay { background: #d9ecff; }
+#denDress { background: #f3dcff; }
+#denBack { position: absolute; left: max(12px, env(safe-area-inset-left, 0px)); top: calc(env(safe-area-inset-top, 0px) + 10px); width: 72px; height: 72px; }
+#denTools { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; gap: 18px; pointer-events: none;
+  padding: 0 max(16px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 14px) max(16px, env(safe-area-inset-left, 0px)); }
+#denTools > * { pointer-events: auto; }
+#denTray { position: absolute; left: 96px; right: 12px; top: calc(env(safe-area-inset-top, 0px) + 10px); display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; pointer-events: none; }
+#denTray > * { pointer-events: auto; }
+.chip { width: 64px; height: 64px; border: 4px solid var(--ink); box-shadow: 0 5px 0 var(--ink); background: #fff; padding: 4px; display: grid; place-items: center; box-sizing: border-box; }
+.chip:active { transform: translateY(4px); box-shadow: 0 1px 0 var(--ink); }
+.chip[aria-pressed="true"] { background: var(--sun); }
+.chip svg { width: 100%; height: 100%; }
+.swatch { width: 100%; height: 100%; display: block; border: 3px solid var(--ink); box-sizing: border-box; }
+.swatch.sunny { background: linear-gradient(135deg, var(--lava-sunny) 50%, var(--lava-sunny-comb) 50%); }
+.swatch.lagoon { background: linear-gradient(135deg, var(--lava-lagoon) 50%, var(--lava-lagoon-comb) 50%); }
 
 /* settings */
 #settings .panel { text-align: left; max-width: 520px; }

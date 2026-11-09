@@ -10,7 +10,7 @@ const DIFF = {
   hard: { name: 'Hard', speed: 92, behind: 0.5, steal: 'gone', nibble: 1.2, leave: 0, returnP: 0.5, askSpawn: 14,
     help: 'Lots of persistent Nibblers that come back for more. Stolen pieces are gone for good, so the outpost is built with whatever you keep.' },
 };
-const DEFAULTS = { mode: 'both', weeks: WEEKS.filter(w => w.term === 'Autumn 1').map(w => w.id), letterCase: 'lower', nums: 5, voice: 'natural', myVoice: true, move: 'manual', music: true, diff: 'easy', char: 'bob', unlocked: 1, seasons: 'auto', seasonOff: '' };
+const DEFAULTS = { mode: 'both', weeks: WEEKS.filter(w => w.term === 'Autumn 1').map(w => w.id), letterCase: 'lower', nums: 5, voice: 'natural', myVoice: true, move: 'manual', music: true, diff: 'easy', char: 'bob', unlocked: 1, seasons: 'auto', seasonOff: '', outfits: {}, lavaColour: 'sunny' };
 let S = Object.assign({}, DEFAULTS);
 try { const saved = JSON.parse(localStorage.getItem('bobs-outpost-settings') || 'null'); if (saved) S = Object.assign(S, saved); } catch (e) { /* storage unavailable */ }
 if (!DIFF[S.diff]) S.diff = 'easy';

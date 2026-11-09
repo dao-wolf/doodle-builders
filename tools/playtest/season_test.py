@@ -3,7 +3,7 @@
 Switched off, the look must stay off in the level that follows: the land, the hero's costume and the outpost's
 blocks. That must hold whichever way the player gets to the level, and after the page reloads. A quick second tap
 (a double tap, or a child tapping again and again) must count once, so the look doesn't flip back on. Runs as if
-it were 1 Dec 2026 (Christmas), whatever today's date is.
+it were 1 Dec 2026 (Christmas), whatever today's date is, then checks Easter's moving window.
 
     python tools/playtest/season_test.py
     PLAYTEST_ENGINE=webkit python tools/playtest/season_test.py
@@ -28,10 +28,10 @@ async def tap(page, selector):
     await page.touchscreen.tap(*await page.evaluate(CENTRE, selector))
 
 
-async def open_game(browser, errors, name):
+async def open_game(browser, errors, name, date='2026-12-01'):
     page = await browser.new_page(viewport={'width': 393, 'height': 760}, has_touch=True)
     localsite.watch(page, errors, PORT, name)
-    await page.goto(f'{localsite.address(PORT)}index.html?date=2026-12-01&speed=2.5')
+    await page.goto(f'{localsite.address(PORT)}index.html?date={date}&speed=2.5')
     await page.evaluate(SETTINGS); await page.reload(); await page.wait_for_timeout(700)
     return page
 
@@ -53,7 +53,7 @@ async def go_home(page):
 
 async def expect(page, errors, when, plain):
     look = await page.evaluate(LOOK)
-    if look['plain'] != plain or (look['button'] == 'true') == plain: errors.append(f'{when}: expected the {"plain" if plain else "Christmas"} look, got {look}')
+    if look['plain'] != plain or (look['button'] == 'true') == plain: errors.append(f'{when}: expected the {"plain" if plain else "seasonal"} look, got {look}')
 
 
 async def check_off_then_play(browser, errors):
@@ -94,7 +94,22 @@ async def check_remembered(browser, errors):
     await page.close()
 
 
-CHECKS = check_off_then_play, check_other_routes, check_double_tap, check_remembered
+async def check_easter(browser, errors):
+    """Easter moves every year: its look shows from two weeks before Easter Sunday (28 Mar 2027) to a week after it, and not a day
+    outside. Switched off it stays off in a level, and switched back on it returns."""
+    for date, shows in (('2027-03-13', False), ('2027-03-14', True), ('2027-03-28', True), ('2027-04-04', True), ('2027-04-05', False), ('2028-04-02', True)):
+        page = await open_game(browser, errors, f'easter {date}', date)
+        seen = await page.evaluate('SEASON && SEASON.id')
+        if (seen == 'easter') != shows: errors.append(f'{date}: expected {"the Easter look" if shows else "no Easter look"}, got {seen}')
+        await page.close()
+    page = await open_game(browser, errors, 'easter off and on', '2027-03-28')
+    await expect(page, errors, 'on Easter Sunday 2027', False)
+    await switch(page); await play(page); await expect(page, errors, 'level, Easter switched off', True)
+    await go_home(page); await switch(page); await play(page); await expect(page, errors, 'Easter switched back on', False)
+    await page.close()
+
+
+CHECKS = check_off_then_play, check_other_routes, check_double_tap, check_remembered, check_easter
 
 
 async def main():

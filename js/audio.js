@@ -58,6 +58,11 @@ const SFX = {
   },
   inhale: () => tone(180, 0.38, 'triangle', 0.12, 420), // Dragon Fly breathing in
   fire: () => { noise(0.7, 0.75, 1400); noise(0.45, 0.35, 5000, 0.08); tone(95, 0.55, 'sawtooth', 0.16, 55); },
+  gurgle: () => { tone(150, 0.4, 'sine', 0.16, 300); tone(210, 0.3, 'sine', 0.1, 120, 0.1); }, // Lava gathering her lava
+  lava: () => { noise(0.6, 0.45, 900); [0, 0.1, 0.2, 0.3].forEach((t, i) => tone(300 + i * 90, 0.16, 'sine', 0.18, 140 + i * 40, t)); tone(90, 0.5, 'sawtooth', 0.1, 60); },
+  giggle: () => [0, 0.09, 0.18].forEach((t, i) => tone(520 + i * 110, 0.1, 'sine', 0.22, 760 + i * 110, t)), // a happy hero in the den
+  munch: () => { noise(0.07, 0.3, 2500); tone(240, 0.08, 'triangle', 0.12, 170); },
+  bounce: () => tone(260, 0.14, 'sine', 0.26, 130),
   whirr: () => tone(150, 0.1, 'sine', 0.05, 190), // Dragon Fly's motor as it floats along
   whee: () => tone(500, 0.6, 'square', 0.06, 1800), nibble: () => { noise(0.05, 0.22, 4000); noise(0.05, 0.18, 4000, 0.09); },
   dig: () => { noise(0.18, 0.3, 900); tone(200, 0.15, 'triangle', 0.15, 500); },

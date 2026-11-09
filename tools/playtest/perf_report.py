@@ -1,7 +1,7 @@
 """Measures what the game costs while it runs, for comparing before and after a change. Local use only: the
 numbers depend on the machine, so CI runs perf_test.py instead.
 
-On the title screen and the question screen it prints the frames drawn a second, a CPU figure and the canvas size,
+On the title screen, the question screen and the den it prints the frames drawn a second, a CPU figure and the canvas size,
 in one of two browser engines:
 - Chromium (default): a phone (390x844 at 3x) and a tablet (1024x1366 at 2x). "busy %" is how busy the main
   thread was. Headless Chromium paints the canvas on the CPU, so this overstates what a real device's graphics chip
@@ -98,6 +98,9 @@ async def main(kind, slow, hero):
             await page.click(f'.char[data-char="{hero}"]'); await page.wait_for_timeout(300)
             await page.click('.lvl[data-lvl="0"]'); await page.wait_for_timeout(3000)
             print(f"{name:12} {'question':9} {'%5.1f %12.1f  %s' % await measure(engine, page)}")
+            await page.evaluate('goTitle(); showLevels(); openDen()'); await page.wait_for_timeout(1500)  # the den, with the hero's ball out
+            await page.click('#denPlay'); await page.wait_for_timeout(500)
+            print(f"{name:12} {'den':9} {'%5.1f %12.1f  %s' % await measure(engine, page)}")
             await browser.close()
     srv.shutdown()
 
@@ -105,7 +108,7 @@ if __name__ == '__main__':
     a = argparse.ArgumentParser()
     a.add_argument('--engine', choices=['chromium', 'webkit'], default='chromium', help='the browser engine to measure in')
     a.add_argument('--slow', type=float, default=1, help='slow the CPU down this many times (Chromium only)')
-    a.add_argument('--hero', choices=['bob', 'henry', 'dragon'], default='bob', help='the hero to play as')
+    a.add_argument('--hero', choices=['bob', 'henry', 'dragon', 'lava'], default='bob', help='the hero to play as')
     args = a.parse_args()
     if args.slow > 1 and args.engine == 'webkit': a.error('--slow works with Chromium only')
     asyncio.run(main(args.engine, args.slow, args.hero))

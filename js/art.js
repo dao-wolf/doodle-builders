@@ -1,4 +1,4 @@
-// Pixel textures, outpost blocks and the three heroes (Bob, Mr Henry and Dragon Fly) plus the Nibblers.
+// Pixel textures, outpost blocks and the four heroes (Bob, Mr Henry, Dragon Fly and Lava) plus the Nibblers.
 'use strict';
 
 // ------------------------------------------------------------------ textures
@@ -18,7 +18,9 @@ const BT = {
   // seasonal
   hroof: tex(22, 22, [112, 70, 164], 4, 14, 89), orange: tex(22, 22, [244, 140, 50], 4, 10, 90), aleaf: tex(22, 22, [222, 120, 44], 4, 20, 91),
   hflag: tex(22, 22, [255, 140, 40], 4, 12, 92), xflag: tex(22, 22, [214, 44, 54], 4, 12, 93),
+  eroof: tex(22, 22, [226, 150, 204], 4, 12, 94), eflag: tex(22, 22, [255, 214, 90], 4, 10, 95), eleaf: tex(22, 22, [255, 176, 206], 4, 18, 96),
 };
+const BLOSSOM = tex(30, 30, [255, 182, 210], 6, 20, 97); // pink blossom for Easter trees
 let TH = THEMES.meadow, GT = {};
 function themeTextures(th) {
   return { top: tex(64, 64, th.top, 8, 14, 61), lip: tex(64, 16, th.lip, 8, 12, 62), dirt: tex(64, 64, th.dirt, 8, 14, 63), leaf: tex(30, 30, th.leaf, 6, 20, 64) };
@@ -107,6 +109,34 @@ Object.assign(BLOCK_ART, {
     ctx.fillStyle = '#2b5e2e'; ctx.fillRect(x, y + 1, BS, 2);
     [3, 10, 17].forEach((dx, k) => { const i = Math.round(b.c * 3) + k; ctx.globalAlpha = Math.sin(time * 3 + i * 1.7) > -0.4 ? 1 : 0.45; ctx.fillStyle = BULBS[(i % 4 + 4) % 4]; ctx.fillRect(x + dx, y + 3, 3, 4); });
     ctx.globalAlpha = 1;
+  },
+});
+// ------------------------------------------------------------------ Easter blocks
+const EGGS = [['#ff8fb8', '#ffffff'], ['#7cc8ff', '#ffe27a'], ['#b79cff', '#ffffff'], ['#7ee0a0', '#ff8fb8'], ['#ffd23f', '#ff7a8a']]; // painted eggs: colour, stripe
+const PASTEL = ['#ff9ec4', '#ffe27a', '#9fe0b4', '#b9a5ff', '#8fd0ff'];
+const EGG_ROWS = [[0.3, 0.4], [0.18, 0.64], [0.08, 0.84], [0, 1], [0, 1], [0, 1], [0.04, 0.92], [0.14, 0.72]]; // each row's left edge and width, as a fraction of the egg
+function paintedEgg(w, h, [base, stripe], x = 0, y = 0) { // a painted egg standing on its small end, with its top left at (x, y)
+  const rh = h / EGG_ROWS.length;
+  ctx.fillStyle = base; EGG_ROWS.forEach(([ox, ww], i) => ctx.fillRect(x + ox * w, y + i * rh, ww * w, rh + 0.5));
+  ctx.fillStyle = stripe; [3, 4].forEach(i => { for (let k = 0; k < 4; k++) ctx.fillRect(x + w * (0.02 + k * 0.25 + (i % 2) * 0.12), y + i * rh, w * 0.12, rh / 2 + 1); });
+  ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.fillRect(x + w * 0.22, y + h * 0.16, w * 0.12, h * 0.16);
+}
+Object.assign(BLOCK_ART, {
+  eroof: (b, x, y) => { texturedBlock('eroof', x, y); ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillRect(x + 4, y + 8, 4, 4); ctx.fillRect(x + 14, y + 15, 4, 4); },
+  eflag: (b, x, y, time) => { wavingFlag(BT.eflag, b, x, y, time); ctx.fillStyle = '#ff8fb8'; ctx.fillRect(x + 7, y + Math.sin(time * 6 + b.c) * 2 + 7, 8, 8); },
+  eleaf: (b, x, y) => { texturedBlock('eleaf', x, y); ctx.fillStyle = '#ffffff'; if ((b.c + b.r) % 2) ctx.fillRect(x + 6, y + 6, 4, 4); else ctx.fillRect(x + 12, y + 12, 4, 4); },
+  ewindow: (b, x, y) => { // a window with a flower box
+    windowFrame(x, y, '#bfe6ff'); ctx.fillStyle = '#8a5a30'; ctx.fillRect(x - 1, y + BS - 6, BS + 2, 6);
+    ['#ffe27a', '#ff9ec4', '#ffe27a'].forEach((c, k) => { ctx.fillStyle = '#4a9a34'; ctx.fillRect(x + 3 + k * 6, y + BS - 9, 2, 4); ctx.fillStyle = c; ctx.fillRect(x + 2 + k * 6, y + BS - 12, 4, 4); });
+  },
+  ewreath: (b, x, y) => { // a door with a wreath of spring flowers
+    BLOCK_ART.doortop(b, x, y); ctx.fillStyle = '#4fb86a'; ctx.fillRect(x + 5, y + 5, 12, 12); ctx.fillStyle = '#7c522e'; ctx.fillRect(x + 8, y + 8, 6, 6);
+    PASTEL.forEach((c, k) => { ctx.fillStyle = c; ctx.fillRect(x + [5, 12, 14, 5, 9][k], y + [5, 4, 11, 12, 14][k], 3, 3); });
+  },
+  egg: (b, x, y) => { ctx.fillStyle = '#7ad05a'; ctx.fillRect(x, y + BS - 4, BS, 4); paintedEgg(18, 20, EGGS[(b.c < 0 ? 0 : 2) + (b.r > 3 ? 1 : 0)], x + 2, y + 1); },
+  bunting: (b, x, y, time) => { // little pastel flags along the top
+    ctx.fillStyle = '#7c522e'; ctx.fillRect(x, y + 1, BS, 2);
+    [2, 9, 16].forEach((dx, k) => { const i = Math.round(b.c * 3) + k, sw = Math.round(Math.sin(time * 3 + i)); ctx.fillStyle = PASTEL[(i % 5 + 5) % 5]; ctx.beginPath(); ctx.moveTo(x + dx, y + 3); ctx.lineTo(x + dx + 6, y + 3); ctx.lineTo(x + dx + 3 + sw, y + 10); ctx.fill(); });
   },
 });
 function drawPiece(p, cx, cy, s, time) { // centred on (cx, cy)
@@ -326,6 +356,96 @@ const DF_MOUTH = { // at the front of the snout; an open mouth glows with fire
   puff: () => ctx.fillRect(72, -141, 8, 2),
 };
 function dragonMouth(f) { ctx.fillStyle = '#221a1e'; (DF_MOUTH[f.mouth] || DF_MOUTH.smile)(f); }
+// Lava: a chicken that spews friendly lava, from a child's drawing: a big round head, one big eye, a pointed beak, a small wing
+// with finger-like feathers and a curly tail. Drawn side-on, facing the way she walks (right). She comes in two colours, which
+// a child picks in the den (S.lavaColour); the lava is always orange and yellow.
+const LAVA_PALS = {
+  sunny: { body: '#ffd35a', shade: '#f0a63a', belly: '#fff0b8', comb: '#ff5a3c', combHi: '#ff8a64', beak: '#ff9a1f', beakDk: '#d9691a', leg: '#f28a2a',
+    wattle: '#e8402e', tail: ['#ff4f1f', '#ff7a24', '#ffa534', '#ffd24a'], wing: '#f4b640', cheek: 'rgba(240,110,110,.55)' },
+  lagoon: { body: '#7bd86e', shade: '#3fae6a', belly: '#d2f5cf', comb: '#2f8fe0', combHi: '#62b2f2', beak: '#ffd23f', beakDk: '#d9a21a', leg: '#e2a62a',
+    wattle: '#2f8fe0', tail: ['#2f8fe0', '#2fb0b8', '#3fcf8a', '#9fe86a'], wing: '#4fc27a', cheek: 'rgba(240,130,150,.6)' },
+};
+const LAVA_COLS = ['#ff4f1f', '#ff7a24', '#ffa534', '#ffd24a', '#fff0a0'];
+let LP = LAVA_PALS.sunny; // the colours of the Lava being drawn
+const pixel = (x, y, w, h, c) => { ctx.fillStyle = c; ctx.fillRect(x, y, w, h); };
+const BLOB_ROW = 4; // a blob is drawn in rows this many pixels tall
+function roundBlob(cx, cy, rx, ry, c) { // a pixel-stepped ellipse
+  const q = BLOB_ROW; ctx.fillStyle = c;
+  for (let y = -ry; y < ry; y += q) { const yy = y + q / 2, hw = Math.round(rx * Math.sqrt(Math.max(0, 1 - (yy * yy) / (ry * ry))) / q) * q; if (hw > 0) ctx.fillRect(cx - hw, cy + y, hw * 2, q); }
+}
+const LAVA_TAIL = [[-36, -58, 18], [-46, -64, 17], [-54, -74, 16], [-58, -86, 15], [-57, -98, 14], [-50, -107, 13], [-40, -110, 12], [-31, -105, 11], [-29, -97, 10], [-34, -92, 9]]; // x, y, size along the curl
+function lavaTail(time, glow) { // a curly plume of squares, ending in a little bubble of lava
+  LAVA_TAIL.forEach(([x, y, s], i) => {
+    const t = i / (LAVA_TAIL.length - 1), sw = Math.sin(time * 3 - i * 0.5) * 1.2 * t;
+    pixel(x - s / 2 + sw, y - s / 2, s, s, LP.tail[Math.min(3, Math.floor(t * 4))]);
+    pixel(x - s / 2 + sw, y - s / 2, s, 3, 'rgba(255,255,255,.3)'); pixel(x - s / 2 + sw, y + s / 2 - 3, s, 3, 'rgba(0,0,0,.14)');
+  });
+  const [tx, ty] = LAVA_TAIL[LAVA_TAIL.length - 1], g = Math.round(2 * Math.sin(time * 4) + glow * 3);
+  roundBlob(tx, ty, 11 + g, 11 + g, '#ffa534'); roundBlob(tx, ty, 7 + g, 7 + g, '#ffe27a'); pixel(tx - 4, ty - 5, 3, 3, '#ffffff');
+}
+function lavaWing(time, flap) { // a small wing with three finger-like feathers
+  ctx.save(); ctx.translate(-14, -70); ctx.rotate(-flap * 0.9 + Math.sin(time * 5) * 0.04);
+  roundBlob(4, 4, 15, 12, LP.shade); roundBlob(4, 2, 13, 10, LP.wing);
+  [-6, 4, 14].forEach((x, i) => { roundBlob(x, 14 + (i === 1 ? 3 : 0), 5, 9, LP.shade); roundBlob(x, 13 + (i === 1 ? 3 : 0), 4, 8, LP.wing); });
+  pixel(-2, 8, 2, 12, 'rgba(0,0,0,.18)'); pixel(8, 8, 2, 12, 'rgba(0,0,0,.18)'); pixel(-6, -4, 12, 3, 'rgba(255,255,255,.3)');
+  ctx.restore();
+}
+function lavaLeg(x, a) { ctx.save(); ctx.translate(x, -30); ctx.rotate(a); pixel(-3, 0, 6, 20, LP.leg); pixel(-3, 0, 2, 20, 'rgba(255,255,255,.25)'); pixel(-5, 20, 18, 5, LP.leg); pixel(8, 21, 4, 4, LP.beakDk); pixel(-5, 24, 18, 2, 'rgba(0,0,0,.18)'); ctx.restore(); }
+function lavaBody(glow) { // a round body with a pale belly that glows when she is about to spew
+  roundBlob(-4, -54, 38, 30, LP.shade); roundBlob(-4, -56, 36, 28, LP.body); roundBlob(10, -46, 20, 16, LP.belly);
+  if (glow) { const k = 0.5 + glow / 2; roundBlob(10, -46, 18 * k, 14 * k, '#ff8a2b'); roundBlob(10, -46, 10 * k, 8 * k, '#ffe27a'); }
+  pixel(-30, -72, 18, 4, 'rgba(255,255,255,.3)');
+}
+function lavaComb() { // the big round comb
+  roundBlob(4, -132, 11, 11, LP.comb); roundBlob(21, -140, 13, 13, LP.comb); roundBlob(38, -132, 11, 11, LP.comb);
+  pixel(15, -150, 10, 4, LP.combHi); pixel(-2, -138, 4, 4, LP.combHi); pixel(35, -138, 4, 4, LP.combHi);
+}
+const LAVA_POSE = { legL: 0, legR: 0, flap: 0.1, glow: 0, tailUp: 0, headTilt: 0, rot: 0, sx: 1, sy: 1, face: {} }; // how she stands when a pose says nothing
+function drawLava(b, time, pose = {}) {
+  LP = LAVA_PALS[S.lavaColour] || LAVA_PALS.sunny;
+  const o = { ...LAVA_POSE, ...pose }, sq = b.squash || 0, sx = o.sx * (1 + sq * 0.7), sy = o.sy * (1 - sq);
+  ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(o.rot); ctx.scale(sx, sy);
+  ctx.save(); ctx.translate(-30, -50); ctx.rotate(Math.sin(time * 3) * 0.04 + o.tailUp * 0.12); ctx.translate(30, 50); lavaTail(time, o.glow); ctx.restore();
+  lavaLeg(-12, o.legL); lavaLeg(12, o.legR);
+  lavaBody(o.glow);
+  lavaWing(time, o.flap);
+  wear('lavaBody', time);
+  lavaHead(time, o);
+  ctx.restore();
+}
+function lavaHead(time, o) {
+  ctx.save(); ctx.translate(14, -80); ctx.rotate(o.headTilt); ctx.scale(1 + 0.05 * o.glow, 1 + 0.05 * o.glow); ctx.translate(-14, 80); // the head nods from her neck
+  roundBlob(22, -100, 32, 30, LP.shade); roundBlob(22, -102, 30, 28, LP.body); pixel(2, -122, 22, 4, 'rgba(255,255,255,.3)');
+  wear('lavaBrim', time);
+  lavaComb();
+  wear('lavaHat', time);
+  lavaFace(o.face);
+  ctx.restore();
+}
+function lavaEye(f) { // one big round eye
+  const ink = '#221a1e', ex = 38, ey = -112, e = f.eyes || 'open';
+  if (e === 'open') {
+    roundBlob(ex, ey + 10, 12, 12, '#ffffff'); pixel(ex - 12, ey + 4, 24, 3, '#e1e6eb');
+    const p = f.pupil || [0, 0], px = clamp(ex + 3 + p[0], ex - 3, ex + 6), py = clamp(ey + 11 + p[1], ey + 8, ey + 14);
+    roundBlob(px, py, 6, 7, ink); pixel(px - 3, py - 4, 3, 3, '#ffffff');
+  } else if (e === 'closed') pixel(ex - 10, ey + 11, 20, 3, ink);
+  else { ctx.strokeStyle = ink; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(ex - 8, ey + 3); ctx.lineTo(ex + 8, ey + 11); ctx.lineTo(ex - 8, ey + 19); ctx.stroke(); }
+  pixel(ex - 24, ey + 28, 12, 6, LP.cheek); // a rosy cheek
+}
+const LAVA_GAP = { open: 12, O: 6, puff: 1 }; // how far the beak parts for each mouth
+function lavaFace(f) {
+  lavaEye(f);
+  const m = f.mouth || 'smile', bx = 50, by = -100, gap = LAVA_GAP[m] || 0, up = by - gap / 2, dn = by + gap / 2;
+  if (gap > 3) { // an open beak shows a glowing mouth
+    ctx.fillStyle = '#b8281a'; ctx.beginPath(); ctx.moveTo(bx, up - 6); ctx.lineTo(bx + 20, up); ctx.lineTo(bx + 18, dn + 4); ctx.lineTo(bx, dn + 8); ctx.fill();
+    ctx.fillStyle = '#ff9a3a'; ctx.beginPath(); ctx.moveTo(bx + 2, up - 2); ctx.lineTo(bx + 16, up + 1); ctx.lineTo(bx + 14, dn + 2); ctx.lineTo(bx + 2, dn + 4); ctx.fill();
+    if (m === 'open') pixel(bx + 5, by - 3, 8, 5, '#ffe27a');
+  }
+  ctx.fillStyle = LP.beak; ctx.beginPath(); ctx.moveTo(bx, up - 9); ctx.lineTo(bx + 23, up - 1); ctx.lineTo(bx + 21, up + 3); ctx.lineTo(bx, up + 1); ctx.fill();
+  ctx.fillStyle = LP.beakDk; ctx.beginPath(); ctx.moveTo(bx, dn + 3); ctx.lineTo(bx + 19, dn + 3); ctx.lineTo(bx + 16, dn + 9); ctx.lineTo(bx, dn + 9); ctx.fill();
+  if (m === 'grin') pixel(bx + 2, by + 1, 16, 2, '#c0301a');
+  roundBlob(bx + 2, by + 14, 5, 6, LP.wattle); // a little wattle under the beak
+}
 function drawNib(n, x, y, time) {
   ctx.save(); ctx.translate(x, y); ctx.rotate(n.rot || 0);
   const k = n.state === 'pop' ? easeOutBack(n.t / 0.45) : 1;
@@ -348,13 +468,26 @@ function nibEyes(n) {
   ctx.fillStyle = '#2b2140'; const look = n.state === 'fly' ? 0 : -2; ctx.fillRect(-11 + look, -31, 5, 6); ctx.fillRect(7 + look, -29, 4, 4);
 }
 
-// ------------------------------------------------------------------ seasonal costumes
+// ------------------------------------------------------------------ costumes
 // Small additions over the heroes and Nibblers, so they stay recognisable. Each is drawn in that body part's own coordinates.
+// A costume is named by the season it belongs to. A hero wears the season's costume unless a child picked another outfit in the
+// den (see outfitOf); Nibblers always wear the season's.
 const COSTUMES = {
-  halloween: { bobHat: witchHat, henryBack: cape, dragonNeck: pumpkinBucket, dragonPilot: pilotWitchHat, nib: ghostSheet },
-  christmas: { bobHat: santaHat, henryHead: scarfAndAntlers, dragonBody: fairyLights, dragonPilot: pilotSantaHat, nib: elfHat },
+  halloween: { bobHat: witchHat, henryBack: cape, dragonNeck: pumpkinBucket, dragonPilot: pilotWitchHat, lavaHat: lavaWitchHat, nib: ghostSheet },
+  christmas: { bobHat: santaHat, henryHead: scarfAndAntlers, dragonBody: fairyLights, dragonPilot: pilotSantaHat, lavaHat: lavaSantaHat, nib: elfHat },
+  easter: { bobHat: bunnyEars, henryHead: flowerCrown, henryBack: eggBasket, dragonNeck: eggBucket, dragonPilot: pilotBunnyEars, lavaBrim: easterBonnet, nib: eggShell },
 };
-function wear(part, arg) { const c = SEASON && COSTUMES[SEASON.id]; if (c && c[part]) c[part](arg); }
+const OUTFITS = ['auto', 'none', 'halloween', 'christmas', 'easter']; // what a child can pick: the season's, none, or one of the costumes
+// The costume set a hero wears, or null: the outfit a child picked in the den, or by default the season's. When a grown-up
+// has set Seasonal themes to Off, nobody wears one; a pick stays saved and comes back when Off is changed.
+function outfitOf(who) {
+  if (S.seasons === 'off') return null;
+  const o = (S.outfits || {})[who];
+  if (!OUTFITS.includes(o) || o === 'auto') return SEASON ? SEASON.id : null;
+  return o === 'none' ? null : o;
+}
+let OUTFIT = null; // the costume set of the hero being drawn: whoever draws a hero sets it first
+function wear(part, arg) { const id = part === 'nib' ? SEASON && SEASON.id : OUTFIT, c = id && COSTUMES[id]; if (c && c[part]) c[part](arg); }
 function steps(rows, h) { rows.forEach(([x, y, w]) => ctx.fillRect(x, y, w, h)); } // a pixel shape from rows of [x, y, width]
 function witchHat() { // Bob: a little purple witch hat; his antenna pokes out in front
   ctx.fillStyle = '#4b2f7a'; ctx.fillRect(-38, -67, 54, 6);
@@ -410,4 +543,41 @@ function ghostSheet(n) { // Nibblers: a little ghost sheet with eye holes
 function elfHat() { // Nibblers: an elf hat with a bell
   ctx.fillStyle = '#3fae5a'; steps([[-20, -58, 42], [-12, -64, 32], [-4, -69, 24], [6, -73, 15], [14, -76, 8]], 6);
   ctx.fillStyle = '#e23b3b'; ctx.fillRect(-24, -53, 52, 6); ctx.fillStyle = '#ffd23f'; ctx.fillRect(21, -78, 6, 6);
+}
+function bunnyEars() { // Bob: bunny ears either side of his antenna
+  [[-22, -0.18], [16, 0.22]].forEach(([x, r]) => { ctx.save(); ctx.translate(x, -58); ctx.rotate(r); ctx.fillStyle = '#f4efe6'; ctx.fillRect(-5, -34, 12, 36); ctx.fillRect(-3, -38, 8, 6); ctx.fillStyle = '#ffb3c8'; ctx.fillRect(-2, -30, 6, 26); ctx.restore(); });
+}
+function flowerCrown() { // Mr Henry: a ring of spring flowers on his head
+  for (let k = 0; k < 6; k++) { const x = 30 + k * 8; ctx.fillStyle = '#4a9a34'; ctx.fillRect(x, -119, 8, 3); ctx.fillStyle = PASTEL[k % 5]; ctx.fillRect(x + 1, -124, 6, 6); ctx.fillStyle = '#fff6cf'; ctx.fillRect(x + 3, -122, 2, 2); }
+}
+function eggBasket() { // Mr Henry: a basket of painted eggs on his back
+  ctx.fillStyle = '#9a6a3a'; ctx.fillRect(-36, -98, 3, 12); ctx.fillRect(-14, -98, 3, 12); ctx.fillRect(-36, -100, 25, 3);
+  EGGS.slice(0, 3).forEach((egg, i) => paintedEgg(10, 12, egg, -34 + i * 8, -108 + (i === 1 ? -2 : 0)));
+  ctx.fillStyle = '#c4894a'; ctx.fillRect(-40, -92, 33, 12); ctx.fillStyle = '#a06a30'; ctx.fillRect(-40, -88, 33, 2); ctx.fillRect(-40, -84, 33, 2);
+}
+function eggBucket(time) { // Dragon Fly: a basket of eggs swinging from its neck
+  const sw = Math.round(Math.sin(time * 3) * 2);
+  ctx.fillStyle = '#7b4a2a'; ctx.fillRect(33, -84, 2, 16);
+  ctx.fillStyle = '#c4894a'; ctx.fillRect(25 + sw, -66, 20, 12); ctx.fillStyle = '#a06a30'; ctx.fillRect(25 + sw, -62, 20, 2);
+  EGGS.slice(1, 4).forEach((egg, i) => paintedEgg(8, 10, egg, 27 + sw + i * 6, -73));
+}
+function pilotBunnyEars() { ctx.fillStyle = '#f4efe6'; ctx.fillRect(-25, -140, 4, 16); ctx.fillRect(-17, -140, 4, 16); ctx.fillStyle = '#ffb3c8'; ctx.fillRect(-24, -137, 2, 11); ctx.fillRect(-16, -137, 2, 11); }
+function eggShell() { // Nibblers: half a cracked eggshell, worn like a hat
+  ctx.fillStyle = '#fff6e6'; steps([[-18, -58, 38], [-14, -62, 30], [-8, -66, 18]], 5);
+  ctx.fillStyle = '#ffb3c8'; ctx.fillRect(-10, -56, 4, 4); ctx.fillRect(4, -60, 4, 4); ctx.fillStyle = '#9fd8ff'; ctx.fillRect(-2, -53, 4, 3);
+  ctx.fillStyle = '#fff6e6'; for (let k = 0; k < 5; k++) ctx.fillRect(-19 + k * 8, -45 + (k % 2) * -4, 6, 6);
+}
+function easterBonnet() { // Lava: a straw bonnet brim with a ribbon and flowers; her comb pokes up through it
+  roundBlob(22, -119, 38, 8, '#d9a93e'); roundBlob(22, -121, 36, 7, '#f6dd84'); pixel(-8, -122, 60, 3, 'rgba(255,255,255,.35)');
+  pixel(-14, -124, 10, 10, '#ff7fae'); pixel(-12, -122, 6, 6, '#ff9ec4'); pixel(-18, -112, 6, 14, '#ff7fae'); pixel(-8, -112, 6, 12, '#ff9ec4'); // a bow and its ribbons
+  [[34, '#ffffff'], [43, '#b9a5ff'], [52, '#ffe27a']].forEach(([x, c], i) => { pixel(x, -131 + (i % 2) * 2, 9, 9, c); pixel(x + 3, -128 + (i % 2) * 2, 3, 3, '#ff9a1f'); });
+  pixel(30, -122, 24, 3, '#4a9a34');
+}
+function lavaWitchHat() { // Lava: a tiny witch hat on her comb
+  ctx.fillStyle = '#4b2f7a'; ctx.fillRect(2, -146, 40, 5); steps([[8, -152, 28], [12, -158, 20], [15, -164, 14], [17, -170, 9], [21, -174, 6]], 6);
+  ctx.fillStyle = '#ff8a1f'; ctx.fillRect(8, -151, 28, 4); ctx.fillStyle = '#ffd23f'; ctx.fillRect(20, -151, 5, 4);
+}
+function lavaSantaHat() { // Lava: a Santa hat on her comb
+  ctx.fillStyle = '#e23b3b'; steps([[2, -150, 38], [6, -157, 32], [12, -163, 26], [10, -168, 14], [2, -170, 10], [-6, -166, 10]], 7);
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(-2, -146, 46, 7); ctx.fillRect(-14, -166, 11, 11);
 }

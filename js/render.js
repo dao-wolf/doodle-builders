@@ -126,6 +126,34 @@ const DECOS = {
     });
     ctx.globalAlpha = 1; ctx.fillStyle = '#ffd23f'; ctx.fillRect(-6, -168, 12, 12); ctx.fillRect(-10, -164, 20, 4); ctx.fillRect(-2, -172, 4, 20);
   },
+  // Easter
+  egg: d => { ctx.fillStyle = '#4a9a34'; ctx.fillRect(-9, -3, 18, 4); paintedEgg(18, 24, EGGS[Math.floor(d.seed * 5)], -9, -24); },
+  tulip: d => {
+    const c = ['#ff6b8a', '#ffd23f', '#b79cff', '#ff9ec4'][Math.floor(d.seed * 4)];
+    ctx.fillStyle = '#4a9a34'; ctx.fillRect(-1, -16, 3, 16); ctx.fillRect(-6, -10, 5, 3); ctx.fillRect(3, -8, 5, 3);
+    ctx.fillStyle = c; ctx.fillRect(-6, -26, 12, 11); ctx.fillRect(-6, -29, 4, 4); ctx.fillRect(2, -29, 4, 4); ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillRect(-5, -25, 3, 6);
+  },
+  bunny: (d, time) => { // a bunny that hops now and then
+    const y = -(Math.max(0, Math.sin(time * 2 + d.seed * 9)) ** 6) * 10;
+    ctx.fillStyle = 'rgba(40,60,30,.18)'; ctx.fillRect(-12, -3, 24, 4);
+    ctx.fillStyle = '#f4efe6'; ctx.fillRect(-11, y - 16, 22, 14); ctx.fillRect(-14, y - 12, 8, 10); ctx.fillRect(2, y - 26, 14, 12); ctx.fillRect(10, y - 21, 5, 4); ctx.fillRect(4, y - 40, 4, 16); ctx.fillRect(11, y - 40, 4, 16);
+    ctx.fillStyle = '#ffb3c8'; ctx.fillRect(5, y - 37, 2, 11); ctx.fillRect(12, y - 37, 2, 11); ctx.fillRect(14, y - 18, 3, 2);
+    ctx.fillStyle = '#2b2140'; ctx.fillRect(10, y - 22, 3, 3);
+  },
+  chick: (d, time) => { // a chick that hops about
+    const hop = Math.abs(Math.sin(time * 5 + d.seed * 9)) * 5, y = -hop;
+    ctx.fillStyle = 'rgba(40,60,30,.18)'; ctx.fillRect(-9, -3, 18, 4);
+    ctx.fillStyle = '#ffe14d'; ctx.fillRect(-9, y - 16, 18, 14); ctx.fillRect(-6, y - 20, 12, 5); ctx.fillStyle = '#ffd02a'; ctx.fillRect(-9, y - 6, 18, 4);
+    ctx.fillStyle = '#ff9a1f'; ctx.fillRect(8, y - 15, 6, 4); ctx.fillRect(-4, y - 2, 3, 4 + hop * 0.2); ctx.fillRect(3, y - 2, 3, 4);
+    ctx.fillStyle = '#2b2140'; ctx.fillRect(2, y - 16, 3, 3);
+  },
+  blossom: () => { // a tree in pink blossom
+    ctx.drawImage(T.trunk, -9, -100, 18, 100);
+    [[-48, -150], [-18, -156], [14, -150], [-34, -126], [-2, -134], [28, -124], [-60, -122], [-22, -176], [8, -176]].forEach(([a, b], i) => {
+      ctx.drawImage(BLOSSOM, a, b, 30, 30); ctx.fillStyle = 'rgba(255,255,255,.2)'; ctx.fillRect(a, b, 30, 4);
+      if (i % 3 === 0) { ctx.fillStyle = '#fff'; ctx.fillRect(a + 8, b + 10, 5, 5); }
+    });
+  },
   xsnowman: () => { snowman(); ctx.fillStyle = '#e23b3b'; ctx.fillRect(-10, -26, 20, 5); ctx.fillRect(4, -24, 5, 12); ctx.fillStyle = '#2b2140'; ctx.fillRect(-8, -46, 16, 4); ctx.fillRect(-5, -56, 10, 10); },
 };
 function drawStop(i, time) {
@@ -231,6 +259,7 @@ function drawPixelArrow(x, y) {
 // How each hero is drawn and moves. shadow is [x offset when facing right, half-width]; turns: flips to walk back.
 // The pose functions tweak the shared pose for each moment: walking, in the air, happy, the action (charge, then blow),
 // looking at something, and the end-of-level dance.
+const softLook = (o, dx, dy) => { o.face.pupil = [dx * (hero.face || 1) * 0.6, dy * 0.6]; }; // Dragon Fly and Lava look about with small eyes
 const LOOKS = {
   bob: { draw: drawBob, shadow: [0, 44], turns: false,
     walk: (o, sw) => { o.legL = sw; o.legR = -sw; o.armL = 0.15 - sw * 0.6; o.armR = 0.15 + sw * 0.6; },
@@ -254,8 +283,16 @@ const LOOKS = {
     happy: (o, time) => { o.flap = 0.3 + Math.sin(time * 14) * 0.15; o.wave = 1; },
     charge: (o, k) => { o.face = { eyes: 'squint', mouth: 'puff' }; o.headTilt = -0.12 * k; o.sy = 1 + 0.05 * k; },
     blow: (o, k) => { o.face = { eyes: 'squint', mouth: 'open' }; o.headTilt = 0.1 * k; o.flap = 0.3 * k; o.sx = 1 + 0.04 * k; },
-    look: (o, dx, dy) => { o.face.pupil = [dx * (hero.face || 1) * 0.6, dy * 0.6]; },
+    look: softLook,
     dance: (o, p) => { o.flap = 0.35 * p; o.legSw = 0.25 * p; o.wave = 1; o.headTilt = 0.08 * p; } },
+  lava: { draw: drawLava, shadow: [2, 52], turns: true,
+    walk: (o, sw) => { o.legL = sw * 0.8; o.legR = -sw * 0.8; o.flap = 0.1 + Math.abs(sw) * 0.3; },
+    air: o => { o.flap = 1.1; o.legL = 0.5; o.legR = -0.4; },
+    happy: (o, time) => { o.flap = 0.9 + Math.sin(time * 18) * 0.35; },
+    charge: (o, k) => { o.glow = k; o.headTilt = -0.12 * k; o.face = { eyes: 'squint', mouth: 'puff' }; o.sy = 1 + 0.05 * k; o.tailUp = k; o.flap = 0.35 * k; },
+    blow: (o, k) => { o.glow = Math.max(0.4, k); o.headTilt = 0.1 * k; o.face = { eyes: 'squint', mouth: 'open' }; o.sx = 1 + 0.05 * k; o.flap = 0.6; },
+    look: softLook,
+    dance: (o, p) => { o.flap = 0.7 + 0.5 * p; o.legL = 0.3 * Math.max(0, p); o.legR = 0.3 * Math.max(0, -p); o.headTilt = 0.1 * p; } },
 };
 function heroPose(time) {
   const L = LOOKS[S.char], blink = (time * 1000) % 3100 < 120;
@@ -280,6 +317,7 @@ function heroTarget() { // what the hero looks at: the piece to place, a Nibbler
 function drawHero(time) {
   const b = { x: heroSX(), y: hero.y, squash: hero.squash }, L = LOOKS[S.char], f = hero.face || 1;
   drawShadow(b.x + L.shadow[0] * f, GY - hero.y + (L.lift ? L.lift(time) : 0), L.shadow[1]);
+  OUTFIT = outfitOf(S.char);
   ctx.save(); if (L.turns && f < 0) { ctx.translate(b.x, 0); ctx.scale(-1, 1); ctx.translate(-b.x, 0); } // side-on heroes turn round to walk back
   L.draw(b, time, heroPose(time)); ctx.restore();
 }
@@ -287,13 +325,25 @@ function draw(time) {
   ctx.setTransform(SC * DPR, 0, 0, SC * DPR, 0, 0);
   ctx.imageSmoothingEnabled = false;
   if (shake > 0.3) ctx.translate(Math.sin(time * 97) * shake, Math.cos(time * 83) * shake);
-  if (!LV) { drawMenuBackdrop(time); return; }
+  if (den.on) drawDen(time);
+  else if (!LV) drawMenuBackdrop(time);
+  else drawLevel(time);
+}
+function drawLevel(time) { // back to front: scenery, Nibblers, the hero, answers, the carried piece, then the effects and the hint
   drawSky(time);
   decos.forEach(d => { if (isTree(d.kind)) drawDeco(d, time); });
   drawGround();
   decos.forEach(d => { if (!isTree(d.kind)) drawDeco(d, time); });
   stops.forEach((_, i) => drawStop(i, time));
   drawSite(time);
+  drawNibblers(time);
+  drawHero(time);
+  items.forEach(it => drawItem(it, time));
+  drawCarry(time);
+  drawEffects(time);
+  drawHint(time);
+}
+function drawNibblers(time) {
   nibs.forEach(n => {
     const x = n.x - camX;
     if (n.state !== 'fly' && n.state !== 'pop') drawShadow(x, 0, 24);
@@ -301,13 +351,14 @@ function draw(time) {
     drawNib(n, x, n.y, time);
     if (n.carry != null) drawPiece(LV.pieces[n.carry], x, n.y - 72 + Math.sin(time * 10) * 3, 0.42, time);
   });
-  drawHero(time);
-  items.forEach(it => drawItem(it, time));
-  if (carry) {
-    const y = carry.y + Math.sin(time * 3) * 6, pulse = 0.5 + 0.5 * Math.sin(time * 5), p = LV.pieces[carry.piece];
-    ctx.fillStyle = `rgba(255,236,140,${0.25 + 0.25 * pulse})`; ctx.fillRect(carry.x - p.ext.w * carry.s / 2 - 12, y - p.ext.h * carry.s / 2 - 12, p.ext.w * carry.s + 24, p.ext.h * carry.s + 24);
-    drawPiece(p, carry.x, y, carry.s, time);
-  }
+}
+function drawCarry(time) { // the piece the hero carries, with a pulsing glow
+  if (!carry) return;
+  const y = carry.y + Math.sin(time * 3) * 6, pulse = 0.5 + 0.5 * Math.sin(time * 5), p = LV.pieces[carry.piece];
+  ctx.fillStyle = `rgba(255,236,140,${0.25 + 0.25 * pulse})`; ctx.fillRect(carry.x - p.ext.w * carry.s / 2 - 12, y - p.ext.h * carry.s / 2 - 12, p.ext.w * carry.s + 24, p.ext.h * carry.s + 24);
+  drawPiece(p, carry.x, y, carry.s, time);
+}
+function drawEffects(time) { // flying pieces, sparkles and smoke, score pops, falling bits
   flyers.forEach(f => {
     const k = easeInOut((now - f.t0) / f.dur);
     const x = lerp(f.x0, f.x1, k), y = lerp(f.y0, f.y1, k) - Math.sin(k * Math.PI) * f.arc;
@@ -327,8 +378,11 @@ function draw(time) {
     ctx.restore();
   });
   flakes.forEach(f => { ctx.fillStyle = f.c; ctx.fillRect(f.x * W, f.y * GY, f.s, f.s); });
+}
+function placingPiece() { return phase === 'place' && carry; } // the hero holds a piece, ready to place
+function drawHint(time) { // the bobbing arrow: at the outline for a carried piece, else at the answer or gem
   const bobble = Math.sin(time * 6) * 6;
-  if (hint === 'outline' && phase === 'place' && carry) { const bx = pieceBoxScreen(carry.piece); drawPixelArrow(bx.cx, bx.y0 - 14 + bobble); }
+  if (hint === 'outline' && placingPiece()) { const bx = pieceBoxScreen(carry.piece); drawPixelArrow(bx.cx, bx.y0 - 14 + bobble); }
   else if (hint && hint.state === 'idle') drawPixelArrow(hint.x, hint.y - (hint.kind === 'gem' ? 30 : 86) * ANSWER_K + bobble);
 }
 // soft scenery behind the menus
@@ -346,6 +400,7 @@ const CARD_POSE = { // each hero on its start-screen card: at [x, y, scale], whe
   bob: { at: [85, 136, 0.74], blink: 0, prop: [146, 0.1], idle: (o, time) => { o.armR = 0.4 + 0.35 * Math.sin(time * 5); } },
   henry: { at: [78, 136, 1], blink: 900, prop: [158, 0.3], idle: (o, time) => { o.trunkUp = 0.25 + 0.25 * Math.sin(time * 1.6); o.earFlap = Math.sin(time * 2) * 0.08; } },
   dragon: { at: [76, 134, 0.88], blink: 1700, prop: [152, 0.5], idle: (o, time) => { o.flap = 0.12 + 0.12 * Math.sin(time * 3); o.hover = 8 + 3 * Math.sin(time * 2.6); } },
+  lava: { at: [74, 136, 0.82], blink: 1300, prop: [152, 0.2], idle: (o, time) => { o.flap = 0.1 + 0.12 * Math.max(0, Math.sin(time * 3)); } },
 };
 function renderCard(canvas, who, time) {
   const g = canvas.getContext('2d'); const saved = ctx; ctx = g;
@@ -354,6 +409,7 @@ function renderCard(canvas, who, time) {
   g.fillStyle = c.sky; g.fillRect(0, 0, 170, 150);
   g.fillStyle = c.ground; g.fillRect(0, 128, 170, 22); g.fillStyle = c.lip; g.fillRect(0, 128, 170, 5);
   if (c.prop) cardSeason(c, who, time);
+  OUTFIT = outfitOf(who);
   const C = CARD_POSE[who], [x, y, s] = C.at;
   const o = { face: { eyes: (time * 1000 + C.blink) % 3100 < 120 ? 'closed' : 'open', mouth: 'smile' } };
   C.idle(o, time);

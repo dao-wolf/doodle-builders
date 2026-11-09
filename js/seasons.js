@@ -1,14 +1,14 @@
-// Seasonal themes (Halloween, Christmas): when each one shows, and how it changes the lands, outposts and start screen.
-// Costumes are drawn in art.js and seasonal scenery in render.js; game.js switches the look on and off.
+// Seasonal themes (Halloween, Christmas, Easter): how each one changes the lands, outposts and start screen. When each one
+// shows is in calendar.js. Costumes are drawn in art.js and seasonal scenery in render.js; game.js switches the look on and off.
 'use strict';
 
 // ------------------------------------------------------------------ registry
-// Each season shows from `from` to `to` (month-day, both days included). A window may cross the new year.
 const along = (r, c0, c1, v) => { const o = {}; for (let c = c0; c <= c1; c++) o[`${c},${r}`] = v; return o; };
 const LEAVES = { n: 24, size: [3, 6], speed: [16, 32], cols: ['#e8772e', '#c8501e', '#f2b134', '#9a5a2a'] };
+const PETALS = { n: 26, size: [3, 5], speed: [14, 30], cols: ['#ffc4dc', '#ffffff', '#ffd9ec', '#ffe27a'] };
 const SEASONS = {
   halloween: {
-    name: 'Halloween', from: '10-15', to: '11-03',
+    name: 'Halloween',
     party: ['#ff8a1f', '#ffd23f', '#a26bfa', '#7ee07a', '#ffffff'],
     card: { sky: '#4b3a7e', ground: '#4f7a3a', lip: '#6b9a4a', prop: 'pumpkin', dots: '#fff6cf' },
     lands: {
@@ -29,7 +29,7 @@ const SEASONS = {
     },
   },
   christmas: {
-    name: 'Christmas', from: '11-04', to: '01-06',
+    name: 'Christmas',
     party: ['#e23b3b', '#3fae5a', '#ffd23f', '#ffffff', '#7cc8ff'],
     card: { sky: '#bcd8f4', ground: '#f6faff', lip: '#d6e4f4', prop: 'present', dots: '#ffffff', fall: true },
     lands: {
@@ -49,33 +49,40 @@ const SEASONS = {
       ],
     },
   },
+  easter: {
+    name: 'Easter',
+    party: ['#ff9ec4', '#ffe27a', '#9fe0b4', '#b9a5ff', '#8fd0ff'],
+    card: { sky: '#cfe9ff', ground: '#86d65e', lip: '#a6e67e', prop: 'egg', dots: '#ffffff', fall: true },
+    lands: {
+      all: { fall: PETALS, cloud: 'rgba(255,255,255,.95)' },
+      meadow: { sky: ['#8ccaff', '#cfe8ff', '#fff0d2'], far: [168, 214, 188], near: [128, 204, 138], top: [132, 218, 98], lip: [112, 202, 84], dirt: [150, 112, 78], leaf: [92, 190, 84], trees: ['blossom', 'blossom', 'oak'], small: ['egg', 'tulip', 'bunny', 'egg', 'chick'] },
+      forest: { sky: ['#78bcf0', '#c4e4f6', '#fdf0cc'], far: [110, 176, 140], near: [84, 168, 100], top: [112, 204, 86], lip: [96, 188, 72], dirt: [124, 92, 64], leaf: [76, 176, 82], trees: ['blossom', 'pine', 'blossom'], small: ['egg', 'tulip', 'bunny', 'mushroom'] },
+      beach: { sky: ['#62b4f4', '#aee0ff', '#fff4d4'], trees: ['palm', 'blossom'], small: ['egg', 'shell', 'chick'] },
+      snow: { sky: ['#a6cdf0', '#d8eaf8', '#fbf0f4'], far: [208, 224, 240], near: [190, 224, 206], top: [158, 212, 128], lip: [138, 196, 108], dirt: [140, 112, 88], leaf: [76, 160, 90], snow: false, trees: ['blossom', 'snowpine'], small: ['egg', 'tulip', 'chick'] }, // the snow has melted
+    },
+    skins: {
+      types: { roof: 'eroof', iceroof: 'eroof', flag: 'eflag', window: 'ewindow', leaf: 'eleaf', doortop: 'ewreath' },
+      outposts: [
+        { swap: { '-3,0': 'egg', '3,0': 'egg' }, over: along(4, -4, 4, 'bunting') },
+        { swap: { '-4,5': 'egg', '4,5': 'egg' }, over: along(5, -4, 4, 'bunting') },
+        { swap: { '-3,0': 'egg', '3,0': 'egg' }, over: along(10, -2, 2, 'bunting') },
+        { swap: { '-5,0': 'egg', '5,0': 'egg' }, over: along(3, -3, 3, 'bunting') },
+      ],
+    },
+  },
 };
 Object.entries(SEASONS).forEach(([id, s]) => { s.id = id; });
 let SEASON = null;     // the season being shown, or null for the normal look
 let seasonOpen = null; // { id, key } of the season that is on (its picture button shows), or null
 
 // ------------------------------------------------------------------ when
-const pad2 = n => String(n).padStart(2, '0');
-function inWindow(md, from, to) {
-  const afterStart = md >= from, beforeEnd = md <= to;
-  return from <= to ? afterStart && beforeEnd : afterStart || beforeEnd;
-}
-// The season whose window holds this date, as { id, key }, or null. The key names that year's window
-// (Christmas 2026 runs into January 2027), so a child switching the look off lasts one window only. Pure.
-function seasonOn(date, seasons = SEASONS) {
-  const md = `${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
-  const id = Object.keys(seasons).find(k => inWindow(md, seasons[k].from, seasons[k].to));
-  if (!id) return null;
-  const startedLastYear = seasons[id].from > md;
-  return { id, key: `${id}-${date.getFullYear() - (startedLastYear ? 1 : 0)}` };
-}
-// ?date=YYYY-MM-DD pretends it is that day, for testing
+// seasonOn(date) is in calendar.js. ?date=YYYY-MM-DD pretends it is that day, for testing
 function today(q) {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(q.get('date') || '');
   return m ? new Date(+m[1], m[2] - 1, +m[3]) : new Date();
 }
 // The season that is on now: by date when the grown-ups' setting is Automatic, or the one they picked
-// (Halloween, Christmas or Off). ?season=halloween|christmas|none forces one, ignoring the date and settings.
+// (Halloween, Christmas, Easter or Off). ?season=halloween|christmas|easter|none forces one, ignoring the date and settings.
 function seasonWindow() {
   const q = new URLSearchParams(location.search), forced = q.get('season');
   if (forced) return SEASONS[forced] ? { id: forced, key: `${forced}-test` } : null;
