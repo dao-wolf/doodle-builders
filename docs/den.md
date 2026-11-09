@@ -24,6 +24,7 @@ A costume or colour is saved on the device (`S.outfits` per hero, `S.lavaColour`
 - **Pictures, not words.** Every button has an `aria-label` for grown-ups and screen readers.
 - **Big targets.** Each button is at least 44 px; `den_test.py` checks it.
 - **No zooming, no scrolling.** The same rules as every other screen (`zoom_test.py` visits the den).
+- **The Den button is in view on a phone held sideways.** In a window up to 600 px tall and wider than it is tall, the four outposts sit in one row (`css/style.css`, next to `.lvls`), so Back and Den show without scrolling. `den_test.py` checks it at 844 by 390 and 667 by 375.
 - **Same heroes, same art.** The den draws each hero with their own `LOOKS` entry, so a new hero appears in the den with a row in `DEN_HEIGHT` and `DEN_MOUTH` and nothing else.
 
 ## Backlog: needs discovery first

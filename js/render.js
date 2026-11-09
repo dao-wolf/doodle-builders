@@ -325,14 +325,25 @@ function draw(time) {
   ctx.setTransform(SC * DPR, 0, 0, SC * DPR, 0, 0);
   ctx.imageSmoothingEnabled = false;
   if (shake > 0.3) ctx.translate(Math.sin(time * 97) * shake, Math.cos(time * 83) * shake);
-  if (den.on) { drawDen(time); return; }
-  if (!LV) { drawMenuBackdrop(time); return; }
+  if (den.on) drawDen(time);
+  else if (!LV) drawMenuBackdrop(time);
+  else drawLevel(time);
+}
+function drawLevel(time) { // back to front: scenery, Nibblers, the hero, answers, the carried piece, then the effects and the hint
   drawSky(time);
   decos.forEach(d => { if (isTree(d.kind)) drawDeco(d, time); });
   drawGround();
   decos.forEach(d => { if (!isTree(d.kind)) drawDeco(d, time); });
   stops.forEach((_, i) => drawStop(i, time));
   drawSite(time);
+  drawNibblers(time);
+  drawHero(time);
+  items.forEach(it => drawItem(it, time));
+  drawCarry(time);
+  drawEffects(time);
+  drawHint(time);
+}
+function drawNibblers(time) {
   nibs.forEach(n => {
     const x = n.x - camX;
     if (n.state !== 'fly' && n.state !== 'pop') drawShadow(x, 0, 24);
@@ -340,13 +351,14 @@ function draw(time) {
     drawNib(n, x, n.y, time);
     if (n.carry != null) drawPiece(LV.pieces[n.carry], x, n.y - 72 + Math.sin(time * 10) * 3, 0.42, time);
   });
-  drawHero(time);
-  items.forEach(it => drawItem(it, time));
-  if (carry) {
-    const y = carry.y + Math.sin(time * 3) * 6, pulse = 0.5 + 0.5 * Math.sin(time * 5), p = LV.pieces[carry.piece];
-    ctx.fillStyle = `rgba(255,236,140,${0.25 + 0.25 * pulse})`; ctx.fillRect(carry.x - p.ext.w * carry.s / 2 - 12, y - p.ext.h * carry.s / 2 - 12, p.ext.w * carry.s + 24, p.ext.h * carry.s + 24);
-    drawPiece(p, carry.x, y, carry.s, time);
-  }
+}
+function drawCarry(time) { // the piece the hero carries, with a pulsing glow
+  if (!carry) return;
+  const y = carry.y + Math.sin(time * 3) * 6, pulse = 0.5 + 0.5 * Math.sin(time * 5), p = LV.pieces[carry.piece];
+  ctx.fillStyle = `rgba(255,236,140,${0.25 + 0.25 * pulse})`; ctx.fillRect(carry.x - p.ext.w * carry.s / 2 - 12, y - p.ext.h * carry.s / 2 - 12, p.ext.w * carry.s + 24, p.ext.h * carry.s + 24);
+  drawPiece(p, carry.x, y, carry.s, time);
+}
+function drawEffects(time) { // flying pieces, sparkles and smoke, score pops, falling bits
   flyers.forEach(f => {
     const k = easeInOut((now - f.t0) / f.dur);
     const x = lerp(f.x0, f.x1, k), y = lerp(f.y0, f.y1, k) - Math.sin(k * Math.PI) * f.arc;
@@ -366,8 +378,11 @@ function draw(time) {
     ctx.restore();
   });
   flakes.forEach(f => { ctx.fillStyle = f.c; ctx.fillRect(f.x * W, f.y * GY, f.s, f.s); });
+}
+function placingPiece() { return phase === 'place' && carry; } // the hero holds a piece, ready to place
+function drawHint(time) { // the bobbing arrow: at the outline for a carried piece, else at the answer or gem
   const bobble = Math.sin(time * 6) * 6;
-  if (hint === 'outline' && phase === 'place' && carry) { const bx = pieceBoxScreen(carry.piece); drawPixelArrow(bx.cx, bx.y0 - 14 + bobble); }
+  if (hint === 'outline' && placingPiece()) { const bx = pieceBoxScreen(carry.piece); drawPixelArrow(bx.cx, bx.y0 - 14 + bobble); }
   else if (hint && hint.state === 'idle') drawPixelArrow(hint.x, hint.y - (hint.kind === 'gem' ? 30 : 86) * ANSWER_K + bobble);
 }
 // soft scenery behind the menus

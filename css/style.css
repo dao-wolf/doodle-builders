@@ -134,6 +134,8 @@ button:focus-visible, input:focus-visible + span { outline: 4px solid var(--sun)
 .lvl .lock { position: absolute; left: 50%; top: 38%; transform: translate(-50%, -50%); width: 44px; height: 44px; display: none; }
 .lvl[disabled] .lock { display: block; }
 .diffchip { font-family: var(--letters); font-weight: 700; font-size: 13px; color: var(--muted); }
+/* a phone held sideways is short: the four outposts go in one row, so Back and Den stay in view without scrolling */
+@media (orientation: landscape) and (max-height: 600px) { #levels .panel { max-width: 800px; gap: 10px; padding: 14px 18px 16px; } .lvls { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; } }
 
 /* seasonal look: the picture button on the start screen switches it off and on */
 #title .panel { position: relative; }

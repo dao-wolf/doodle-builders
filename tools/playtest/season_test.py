@@ -51,9 +51,9 @@ async def go_home(page):
     await page.mouse.move(x, y); await page.mouse.down(); await page.wait_for_timeout(1100); await page.mouse.up(); await page.wait_for_timeout(300)
 
 
-async def expect(page, errors, when, plain, name='Christmas'):
+async def expect(page, errors, when, plain):
     look = await page.evaluate(LOOK)
-    if look['plain'] != plain or (look['button'] == 'true') == plain: errors.append(f'{when}: expected the {"plain" if plain else name} look, got {look}')
+    if look['plain'] != plain or (look['button'] == 'true') == plain: errors.append(f'{when}: expected the {"plain" if plain else "seasonal"} look, got {look}')
 
 
 async def check_off_then_play(browser, errors):
@@ -103,9 +103,9 @@ async def check_easter(browser, errors):
         if (seen == 'easter') != shows: errors.append(f'{date}: expected {"the Easter look" if shows else "no Easter look"}, got {seen}')
         await page.close()
     page = await open_game(browser, errors, 'easter off and on', '2027-03-28')
-    await expect(page, errors, 'on Easter Sunday 2027', False, 'Easter')
+    await expect(page, errors, 'on Easter Sunday 2027', False)
     await switch(page); await play(page); await expect(page, errors, 'level, Easter switched off', True)
-    await go_home(page); await switch(page); await play(page); await expect(page, errors, 'Easter switched back on', False, 'Easter')
+    await go_home(page); await switch(page); await play(page); await expect(page, errors, 'Easter switched back on', False)
     await page.close()
 
 

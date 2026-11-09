@@ -92,12 +92,30 @@ async def check_season(page, name, season, errors):
     if seen != want: errors.append(f'start screen looks {seen}, expected {want}')
 
 
+def stored_settings(diff, move, extra):
+    """The settings a scenario saves before the page reloads, as JSON: its own, plus any extra ones (or None)."""
+    return json.dumps({'diff': diff, 'unlocked': 4, 'mode': 'both', 'move': move, **(extra or {})})
+
+
+ACTIVE_STATES = ('pop', 'walk', 'nibble', 'gloat')
+
+
+def fleeing_nearby(n, st, w):
+    """Running away, but still on or just off the screen."""
+    return n['state'] == 'flee' and -70 < n['x'] < w / st['SC'] + 70
+
+
+def active_nibblers(st, w):
+    """The Nibblers that count as in play: popping up, walking, nibbling or gloating, or fleeing but still near the screen."""
+    return [n for n in st['nibs'] if n['state'] in ACTIVE_STATES or fleeing_nearby(n, st, w)]
+
+
 async def play(browser, name, w, h, hero, diff, level, move, style, season=('', None), settings=None):
     page = await browser.new_page(viewport={'width': w, 'height': h}, has_touch=True)
     errors = []
     localsite.watch(page, errors, PORT, name)
     await page.goto(f'{localsite.address(PORT)}index.html?speed={SPEED}&{season[0]}')
-    saved = json.dumps({'diff': diff, 'unlocked': 4, 'mode': 'both', 'move': move, **(settings or {})})
+    saved = stored_settings(diff, move, settings)
     await page.evaluate(f"localStorage.setItem('bobs-outpost-settings', JSON.stringify({saved}))")
     await page.reload(); await page.wait_for_timeout(800)
     await check_season(page, name, season, errors)
@@ -117,7 +135,7 @@ async def play(browser, name, w, h, hero, diff, level, move, style, season=('', 
         sc = st['SC']
         if st['status'] != last:
             log.append((round(time.time() - t0, 1), st['phase'], ''.join(x[0] for x in st['status']))); last = st['status']
-        active = [n for n in st['nibs'] if n['state'] in ('pop', 'walk', 'nibble', 'gloat') or (n['state'] == 'flee' and -70 < n['x'] < w / sc + 70)]
+        active = active_nibblers(st, w)
         if active:
             if seen is None:
                 seen = time.time(); await shot('nibbler')
