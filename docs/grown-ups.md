@@ -15,7 +15,7 @@ On the start screen, press and hold **Grown-ups**. During a game, press and hold
 | Letters shown as | lowercase, UPPERCASE, Both |
 | Numbers | 1 to 5, 1 to 10 |
 | Voice | Natural (Jenny) or Device voice, plus "Use my own recordings first" |
-| Seasonal themes | Automatic, Halloween, Christmas, Off |
+| Seasonal themes | Automatic, Halloween, Christmas, Easter, Off |
 | Outposts | Unlock all, or start again from outpost 1 |
 
 ## Seasonal themes
@@ -26,22 +26,25 @@ The game dresses up for the seasons, then goes back to normal:
 |---|---|---|
 | Halloween | 15 October to 3 November | Dusk sky with a moon, stars and friendly bats; falling leaves; pumpkins and cute ghosts; pumpkin lanterns, cobwebs and a ghost at the lighthouse window; Bob in a witch hat, Mr Henry in a cape, Dragon Fly with a pumpkin bucket and its pilot in a witch hat, Nibblers in ghost sheets |
 | Christmas | 4 November to 6 January | Snow; Christmas trees, presents and snowmen in scarves; snowy roofs, wreaths and fairy lights on the outposts; Bob in a Santa hat, Mr Henry in antlers and a scarf, Dragon Fly in fairy lights and its pilot in a Santa hat, Nibblers in elf hats |
+| Easter | Two weeks before Easter Sunday to a week after it (14 March to 4 April in 2027, 2 to 23 April in 2028) | Pastel meadow with pink blossom trees, painted eggs, tulips, hopping bunnies and chicks, and drifting petals; the snow has melted; pink roofs, egg blocks, bunting and flower boxes on the outposts; Bob in bunny ears, Mr Henry in a flower crown with an egg basket, Dragon Fly with an egg basket and its pilot in bunny ears, Lava in an Easter bonnet, Nibblers in cracked eggshells |
 
-While a season is on, a big picture button (a pumpkin or a Christmas tree) sits on the corner of the start screen, so children can switch the look off and back on without reading. It starts on each time a season begins. In the settings, **Seasonal themes** chooses how the look is picked:
+While a season is on, a big picture button (a pumpkin, a Christmas tree or an egg) sits on the corner of the start screen, so children can switch the look off and back on without reading. It starts on each time a season begins. In the settings, **Seasonal themes** chooses how the look is picked:
 
 | Option | What it does |
 |---|---|
-| Automatic | Halloween and Christmas on the dates above, the normal look the rest of the year |
+| Automatic | Halloween, Christmas and Easter on the dates above, the normal look the rest of the year |
 | Halloween | The Halloween look whatever the date |
 | Christmas | The Christmas look whatever the date |
-| Off | No seasonal look and no picture button |
+| Easter | The Easter look whatever the date |
+| Off | No seasonal look, no picture button, and no costumes: heroes wear nothing in the [den](den.md) or in levels, and the den's costume buttons are hidden. A costume a child picked stays saved and comes back when you change this setting. Lava's colours are not costumes, so they stay |
 
  The outposts keep the same shapes and pieces, so the game plays the same.
 
-To see a look on another day, add `?season=halloween`, `?season=christmas` or `?season=none` to the address, or pretend it is another date with `?date=2026-12-24`.
+To see a look on another day, add `?season=halloween`, `?season=christmas`, `?season=easter` or `?season=none` to the address, or pretend it is another date with `?date=2026-12-24`.
 
 ![Halloween: start screen, Hilltop Hut, the journey and the Lighthouse](seasons/halloween.png)
 ![Christmas: start screen, Hilltop Hut, the journey and the Snow Castle](seasons/christmas.png)
+![Easter: start screen, Hilltop Hut, the journey and the Snow Castle](seasons/easter.png)
 
 ## Record your own voice
 

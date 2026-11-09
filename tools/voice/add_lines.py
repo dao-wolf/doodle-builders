@@ -14,8 +14,8 @@ v = PiperVoice.load(D + 'jenny.onnx')
 SR = v.config.sample_rate
 
 NEW = {
-    'findit': ('Find', 1.08),
-    'tryagain': ('Try again!', 1.08),
+    'hi_lava': ("Cluck, cluck! I'm Lava!", 1.15),
+    'nib_lava': ('Oh no, Nibblers! Press the lava button, to splash them away!', 1.08),
 }
 RETIRED = ('find', 'which', 'thatone', 'letsfind', 'numfind', 'canyou', 'collect')
 

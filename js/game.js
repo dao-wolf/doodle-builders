@@ -80,7 +80,7 @@ function startLevel(i) {
   hero.happyT = 1.4;
   later(3.8, () => { if (phase === 'intro') phase = 'walk'; });
 }
-const isTree = k => ['oak', 'pine', 'palm', 'snowpine', 'xtree'].includes(k);
+const isTree = k => ['oak', 'pine', 'palm', 'snowpine', 'xtree', 'blossom'].includes(k);
 // The land around outpost i: its look (seasonal if a season is showing), scenery, and any falling snow or leaves.
 function dressLand(i) {
   TH = landTheme(LEVELS[i].theme); GT = themeTextures(TH);
@@ -399,6 +399,15 @@ function fireBreath(sx, f) {
   for (let i = 0; i < 30; i++) puff(mx, my + rand(-6, 6), f * rand(220, 620), rand(-70, 50), rand(10, 22), pick(['#e8322b', '#ff5a2b', '#ff8a3c', '#ffc94a']), rand(0.4, 0.8), 2);
   for (let i = 0; i < 12; i++) puff(sx - 50 * f, hero.y - 80 + rand(-20, 20), -f * rand(160, 420), rand(-40, 40), rand(8, 14), '#e6f6ff', rand(0.4, 0.8));
 }
+// Lava spews a happy fountain of glowing lava blobs from her beak. It is warm and bouncy, and it never hurts.
+function lavaSpout(sx, f) {
+  const mx = sx + 74 * f, my = hero.y - 98;
+  SFX.lava(); popText('BLOOP!', clamp(mx + 50 * f, 80, W - 80), my - 90, 40, '#ff8a2b', 0.9);
+  for (let i = 0; i < 40; i++) { const a = rand(-0.6, 0.05), v = rand(300, 780);
+    parts.push({ x: mx, y: my + rand(-5, 5), vx: f * Math.cos(a) * v, vy: Math.sin(a) * v - 120, g: 760, life: rand(0.7, 1.2), age: 0, s: rand(9, 20), c: pick(LAVA_COLS), rot: 0, vr: 0 }); }
+  for (let i = 0; i < 14; i++) puff(mx, my + rand(-8, 8), f * rand(200, 520), rand(-140, 0), rand(10, 20), pick(['rgba(255,170,60,.7)', 'rgba(255,214,90,.7)']), rand(0.4, 0.8), 2);
+  for (let i = 0; i < 8; i++) puff(sx - 40 * f, hero.y - 90, -f * rand(60, 200), rand(-60, 10), rand(10, 16), 'rgba(255,240,200,.8)', rand(0.5, 0.9));
+}
 // ------------------------------------------------------------------ heroes
 // What makes each hero different in play. hit is the tap area as [behind, in front, height] when facing right.
 const HEROES = {
@@ -408,6 +417,8 @@ const HEROES = {
     charge: () => { SFX.hmm(0); later(0.18, () => SFX.hmm(1)); } },
   dragon: { name: 'Dragon Fly', act: 'FIRE!', aria: 'Breathe fire', contact: 56, step: [0.4, 'whirr'], hit: [64, 70, 160], blow: fireBreath,
     charge: () => SFX.inhale() },
+  lava: { name: 'Lava', act: 'LAVA!', aria: 'Spew lava', contact: 52, step: [0.26, 'step'], hit: [52, 66, 150], blow: lavaSpout,
+    charge: () => SFX.gurgle() },
 };
 if (!HEROES[S.char]) S.char = 'bob';
 const HERO = () => HEROES[S.char];

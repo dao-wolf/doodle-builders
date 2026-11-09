@@ -54,6 +54,7 @@
     <button id="seasonBtn" type="button" aria-pressed="true" hidden>
       <svg class="pic halloween" viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges"><g fill="#2b2140"><rect x="3" y="3" width="10" height="12"/><rect x="1" y="5" width="14" height="8"/><rect x="0" y="6" width="16" height="6"/><rect x="6" y="0" width="3" height="4"/></g><rect x="7" y="1" width="1" height="3" fill="#4a9a34"/><rect x="8" y="2" width="3" height="1" fill="#4a9a34"/><g fill="#f08a2c"><rect x="4" y="4" width="8" height="10"/><rect x="2" y="6" width="12" height="6"/><rect x="1" y="7" width="14" height="4"/></g><g fill="#c85a1e"><rect x="6" y="4" width="1" height="10"/><rect x="9" y="4" width="1" height="10"/></g><g fill="#ffe066"><rect x="4" y="7" width="2" height="2"/><rect x="10" y="7" width="2" height="2"/><rect x="5" y="11" width="6" height="1"/><rect x="4" y="10" width="1" height="1"/><rect x="11" y="10" width="1" height="1"/></g></svg>
       <svg class="pic christmas" viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges"><g fill="#ffd23f"><rect x="7" y="0" width="2" height="3"/><rect x="6" y="1" width="4" height="1"/></g><g fill="#2f9e4a"><rect x="6" y="3" width="4" height="2"/><rect x="5" y="5" width="6" height="2"/><rect x="4" y="7" width="8" height="2"/><rect x="3" y="9" width="10" height="2"/><rect x="2" y="11" width="12" height="2"/></g><rect x="7" y="13" width="2" height="3" fill="#8a5a30"/><rect x="6" y="5" width="1" height="1" fill="#e23b3b"/><rect x="9" y="7" width="1" height="1" fill="#ffd23f"/><rect x="5" y="9" width="1" height="1" fill="#5ab4ff"/><rect x="10" y="10" width="1" height="1" fill="#e23b3b"/><rect x="7" y="11" width="1" height="1" fill="#ffffff"/><rect x="4" y="12" width="1" height="1" fill="#ffd23f"/><rect x="11" y="12" width="1" height="1" fill="#5ab4ff"/></svg>
+      <svg class="pic easter" viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges"><g fill="#2b2140"><rect x="5" y="0" width="6" height="2"/><rect x="3" y="2" width="10" height="3"/><rect x="2" y="5" width="12" height="6"/><rect x="3" y="11" width="10" height="3"/><rect x="5" y="14" width="6" height="2"/></g><g fill="#ff9ec4"><rect x="6" y="1" width="4" height="2"/><rect x="4" y="3" width="8" height="2"/><rect x="3" y="5" width="10" height="2"/></g><g fill="#ffe27a"><rect x="3" y="7" width="2" height="2"/><rect x="7" y="7" width="2" height="2"/><rect x="11" y="7" width="2" height="2"/></g><g fill="#9fe0b4"><rect x="3" y="9" width="10" height="2"/><rect x="4" y="11" width="8" height="2"/><rect x="6" y="13" width="4" height="1"/></g><rect x="5" y="3" width="2" height="2" fill="#fff" opacity=".7"/></svg>
     </button>
     <h1>Doodle <span>Builders</span></h1>
     <p class="tiny">Adventure 1: Bob's Outpost</p>
@@ -62,6 +63,7 @@
       <button class="char" data-char="bob" aria-label="Play as Bob"><canvas id="cvBob" width="340" height="300"></canvas><b>BOB</b><small>Sneeze power</small></button>
       <button class="char" data-char="henry" aria-label="Play as Mr Henry"><canvas id="cvHenry" width="340" height="300"></canvas><b>MR HENRY</b><small>Trump power</small></button>
       <button class="char" data-char="dragon" aria-label="Play as Dragon Fly"><canvas id="cvDragon" width="340" height="300"></canvas><b>DRAGON FLY</b><small>Fire power</small></button>
+      <button class="char" data-char="lava" aria-label="Play as Lava"><canvas id="cvLava" width="340" height="300"></canvas><b>LAVA</b><small>Lava power</small></button>
     </div>
     <p class="label">GAME</p>
     <div class="modes" role="group" aria-label="Game">
@@ -77,7 +79,17 @@
   <div class="panel">
     <h2>Pick an outpost</h2>
     <div class="lvls" id="lvlGrid"></div>
-    <div class="btnrow"><button id="lvlBack" class="smallbtn">Back</button><span class="diffchip" id="diffChip"></span></div>
+    <div class="btnrow"><button id="lvlBack" class="smallbtn">Back</button><button id="denBtn" class="smallbtn" aria-label="Visit your hero's den"><svg viewBox="0 0 16 16" width="20" height="20" aria-hidden="true" shape-rendering="crispEdges"><g fill="#e2456a"><rect x="2" y="3" width="4" height="2"/><rect x="10" y="3" width="4" height="2"/><rect x="1" y="5" width="14" height="4"/><rect x="2" y="9" width="12" height="2"/><rect x="4" y="11" width="8" height="2"/><rect x="6" y="13" width="4" height="1"/></g></svg> Den</button><span class="diffchip" id="diffChip"></span></div>
+  </div>
+</div>
+
+<div id="den" hidden>
+  <button id="denBack" class="big denbtn small" aria-label="Back"><svg width="34" height="34" viewBox="0 0 8 9" aria-hidden="true" shape-rendering="crispEdges"><g fill="#2b2140"><rect x="5" y="1" width="2" height="7"/><rect x="4" y="2" width="1" height="5"/><rect x="3" y="3" width="1" height="3"/><rect x="2" y="4" width="1" height="1"/></g></svg></button>
+  <div id="denTray" hidden></div>
+  <div id="denTools">
+    <button id="denFeed" class="big denbtn" aria-label="Feed"><svg viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges"><g fill="#2b2140"><rect x="7" y="0" width="2" height="3"/><rect x="9" y="1" width="4" height="2"/><rect x="2" y="3" width="12" height="2"/><rect x="1" y="5" width="14" height="7"/><rect x="2" y="12" width="12" height="2"/><rect x="4" y="14" width="8" height="1"/></g><g fill="#e8322b"><rect x="3" y="4" width="10" height="2"/><rect x="2" y="6" width="12" height="5"/><rect x="3" y="11" width="10" height="2"/></g><rect x="4" y="6" width="2" height="3" fill="#ff8a7a"/><rect x="10" y="1" width="3" height="1" fill="#4fb86a"/></svg></button>
+    <button id="denPlay" class="big denbtn" aria-label="Play ball" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges"><g fill="#2b2140"><rect x="5" y="1" width="6" height="1"/><rect x="3" y="2" width="10" height="1"/><rect x="2" y="3" width="12" height="10"/><rect x="3" y="13" width="10" height="1"/><rect x="5" y="14" width="6" height="1"/></g><g fill="#fff"><rect x="5" y="2" width="6" height="1"/><rect x="3" y="3" width="10" height="10"/><rect x="5" y="13" width="6" height="1"/></g><rect x="3" y="7" width="10" height="2" fill="#e8322b"/><rect x="7" y="2" width="2" height="12" fill="#4dabf7"/></svg></button>
+    <button id="denDress" class="big denbtn" aria-label="Dress up" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges"><g fill="#2b2140"><rect x="5" y="2" width="6" height="2"/><rect x="2" y="3" width="3" height="2"/><rect x="11" y="3" width="3" height="2"/><rect x="1" y="5" width="3" height="4"/><rect x="12" y="5" width="3" height="4"/><rect x="4" y="5" width="8" height="10"/></g><g fill="#c98bff"><rect x="5" y="4" width="6" height="10"/><rect x="2" y="5" width="2" height="3"/><rect x="12" y="5" width="2" height="3"/></g><g fill="#fff"><rect x="6" y="7" width="4" height="2"/></g></svg></button>
   </div>
 </div>
 
@@ -145,9 +157,10 @@
         <label><input type="radio" name="seasons" id="sAuto" value="auto"><span>Automatic</span></label>
         <label><input type="radio" name="seasons" id="sHalloween" value="halloween"><span>Halloween</span></label>
         <label><input type="radio" name="seasons" id="sChristmas" value="christmas"><span>Christmas</span></label>
+        <label><input type="radio" name="seasons" id="sEaster" value="easter"><span>Easter</span></label>
         <label><input type="radio" name="seasons" id="sOff" value="off"><span>Off</span></label>
       </div>
-      <p class="tiny">Automatic: a Halloween look from 15 October to 3 November and a Christmas look from 4 November to 6 January. Halloween or Christmas shows that look whatever the date. While one is on, children can switch it off and on with the picture button on the start screen.</p>
+      <p class="tiny">Automatic: a Halloween look from 15 October to 3 November, a Christmas look from 4 November to 6 January, and an Easter look from two weeks before Easter Sunday to a week after it (the dates move every year). Halloween, Christmas or Easter shows that look whatever the date. While one is on, children can switch it off and on with the picture button on the start screen.</p>
     </div>
     <div class="set">
       <b>OUTPOSTS</b>
@@ -219,6 +232,7 @@
 
 <script src="js/util.js"></script>
 <script src="js/learning.js"></script>
+<script src="js/calendar.js"></script>
 <script src="js/content.js"></script>
 <script src="js/settings.js"></script>
 <script src="js/seasons.js"></script>
@@ -227,6 +241,7 @@
 <script src="js/voice.js"></script>
 <script src="js/game.js"></script>
 <script src="js/render.js"></script>
+<script src="js/den.js"></script>
 <script src="js/studio.js"></script>
 <script src="js/main.js"></script>
 </body>

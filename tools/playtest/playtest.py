@@ -13,7 +13,7 @@ or its picture button doesn't switch the look off and on.
     python tools/playtest/playtest.py phone-manual    # one scenario
     PLAYTEST_ENGINE=firefox python tools/playtest/playtest.py   # in Firefox (or webkit, Safari's engine)
 """
-import asyncio, os, sys, time
+import asyncio, json, os, sys, time
 from playwright.async_api import async_playwright
 import localsite
 from gate_test import pass_gate
@@ -22,7 +22,7 @@ OUT = os.path.join(os.path.dirname(__file__), 'out')
 PORT = 8780
 SPEED = 2.5
 
-SCENARIOS = {  # name: (width, height, hero, difficulty, level, movement, style[, (query, the look it should show)])
+SCENARIOS = {  # name: (width, height, hero, difficulty, level, movement, style[, (query, the look it should show)[, extra settings]])
     'phone-manual': (390, 844, 'bob', 'easy', 0, 'manual', 'defend'),
     'desktop-auto-medium': (1280, 720, 'henry', 'medium', 1, 'auto', 'lazy'),
     'phone-hard-manual': (390, 844, 'henry', 'hard', 2, 'manual', 'lazy'),
@@ -32,6 +32,9 @@ SCENARIOS = {  # name: (width, height, hero, difficulty, level, movement, style[
     'normal-look': (1280, 720, 'henry', 'easy', 2, 'auto', 'defend', ('season=none', '')),
     'dragon-christmas': (390, 844, 'dragon', 'medium', 1, 'manual', 'defend', ('date=2026-12-24', 'christmas')),
     'dragon-halloween': (1280, 720, 'dragon', 'hard', 3, 'auto', 'lazy', ('season=halloween', 'halloween')),
+    'lava-easter': (390, 844, 'lava', 'medium', 0, 'manual', 'defend', ('date=2027-03-28', 'easter')),
+    'lava-lagoon-halloween': (1280, 720, 'lava', 'hard', 3, 'auto', 'lazy', ('season=halloween', 'halloween'), {'lavaColour': 'lagoon'}),
+    'bob-easter': (1280, 720, 'bob', 'easy', 1, 'auto', 'defend', ('season=easter', 'easter')),
 }
 
 STATE = '''() => ({ phase, type: round && round.type, target: round && round.target, SC, status: status.slice(), GY, camX,
@@ -89,12 +92,13 @@ async def check_season(page, name, season, errors):
     if seen != want: errors.append(f'start screen looks {seen}, expected {want}')
 
 
-async def play(browser, name, w, h, hero, diff, level, move, style, season=('', None)):
+async def play(browser, name, w, h, hero, diff, level, move, style, season=('', None), settings=None):
     page = await browser.new_page(viewport={'width': w, 'height': h}, has_touch=True)
     errors = []
     localsite.watch(page, errors, PORT, name)
     await page.goto(f'{localsite.address(PORT)}index.html?speed={SPEED}&{season[0]}')
-    await page.evaluate(f"localStorage.setItem('bobs-outpost-settings', JSON.stringify({{diff:'{diff}', unlocked:4, mode:'both', move:'{move}'}}))")
+    saved = json.dumps({'diff': diff, 'unlocked': 4, 'mode': 'both', 'move': move, **(settings or {})})
+    await page.evaluate(f"localStorage.setItem('bobs-outpost-settings', JSON.stringify({saved}))")
     await page.reload(); await page.wait_for_timeout(800)
     await check_season(page, name, season, errors)
     await page.click(f'.char[data-char="{hero}"]'); await page.wait_for_timeout(400)

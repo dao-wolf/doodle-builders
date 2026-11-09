@@ -24,8 +24,9 @@ js/util.js            canvas setup, constants, helpers
 js/learning.js        the learning rules: graphemes, weeks, and what to ask (no page access; see docs/domain.md)
 js/content.js         spoken lines, number words, the four outposts and their lands
 js/settings.js        grown-up settings (saved in localStorage)
-js/seasons.js         seasonal themes: when Halloween and Christmas show, and how they change the lands and outposts
-js/art.js             pixel textures, outpost blocks, the heroes (Bob, Mr Henry, Dragon Fly) and the Nibblers
+js/calendar.js        when each season shows, including Easter's moving window (no page access; unit tests in tests/)
+js/seasons.js         seasonal themes: how Halloween, Christmas and Easter change the lands and outposts
+js/art.js             pixel textures, outpost blocks, the heroes (Bob, Mr Henry, Dragon Fly, Lava) and the Nibblers
 js/audio.js           sound effects and music (Web Audio, no files)
 js/voice.js           speech: own recordings, then Jenny, then the device voice (letter sounds: own recordings only)
 js/game.js            game rules: journey, questions, Nibblers, building, input, update loop
@@ -35,12 +36,12 @@ js/main.js            main loop and start-up
 voice/jenny.json      the built-in voice (Jenny (Dioco), made with Piper), one base64 MP3 per clip
 voice/my-voice.json   your voice pack, if you add one (optional)
 tools/voice/          scripts that made jenny.json (see tools/voice/README.md)
-tests/                unit tests for js/learning.js, run in Node
+tests/                unit tests for js/learning.js and js/calendar.js, run in Node
 tools/playtest/       automated playthrough, voice studio, zero-size and performance tests
 docs/                 these guides, the README screenshot and the seasonal screenshots
 ```
 
-The scripts load in this order at the bottom of `index.html`, and they share one global scope, so the order matters: `util, learning, content, settings, seasons, art, audio, voice, game, render, studio, main`.
+The scripts load in this order at the bottom of `index.html`, and they share one global scope, so the order matters: `util, learning, calendar, content, settings, seasons, art, audio, voice, game, render, den, studio, main`.
 
 ## The `TEXT` and `LEVELS` registries
 
@@ -50,11 +51,12 @@ The outposts are block lists in `LEVELS` (same file), so new outposts can be add
 
 ## Adding a hero
 
-Each hero is drawn in code, with no image files. Everything that differs between heroes sits in one table per file, keyed by the hero's id (`bob`, `henry`, `dragon`), so a new hero is a drawing plus a row in each table:
+Each hero is drawn in code, with no image files. Everything that differs between heroes sits in one table per file, keyed by the hero's id (`bob`, `henry`, `dragon`, `lava`), so a new hero is a drawing plus a row in each table:
 
 | Where | What to add |
 |---|---|
-| `js/art.js` | a `drawX(b, time, o)` function, facing right, and any seasonal outfits in `COSTUMES` (drawn by `wear()`) |
+| `js/art.js` | a `drawX(b, time, o)` function, facing right, and any costumes in `COSTUMES` (drawn by `wear()`, one set per season) |
+| `js/den.js` | its height and mouth in `DEN_HEIGHT` and `DEN_MOUTH`, so the den scales it and feeds it |
 | `js/render.js` | `LOOKS`: the drawing, its shadow and its poses; `CARD_POSE`: how it sits on its start-screen card |
 | `js/game.js` | `HEROES`: its name, action button, how close Nibblers get, footstep sound, tap area and action (`charge`, then `blow`) |
 | `js/audio.js` | any new sounds in `SFX` |
@@ -66,13 +68,13 @@ Draw from photos of the original drawing or model, but keep the photos out of th
 
 ## Seasonal themes
 
-`SEASONS` in `js/seasons.js` lists each season's dates (`from` and `to` as month-day; a window may cross the new year), its changes to each land (merged over `THEMES` by `landTheme()`), and its block re-skins per outpost (`skinOutposts()` sets `skin` and `over` on blocks, by type or by `'column,row'`, without changing any shapes). The costumes are `COSTUMES` in `js/art.js`, and the seasonal scenery is in `DECOS` in `js/render.js`. `seasonOn(date)` is a pure function that says which season, if any, a date falls in. `?season=halloween|christmas|none` and `?date=YYYY-MM-DD` force a look or a date.
+`SEASON_DATES` in `js/calendar.js` says when each season shows (`from` and `to` as month-day, where a window may cross the new year; Easter is `before` and `after` days around Easter Sunday, worked out for each year). `SEASONS` in `js/seasons.js` lists each season's changes to each land (merged over `THEMES` by `landTheme()`), and its block re-skins per outpost (`skinOutposts()` sets `skin` and `over` on blocks, by type or by `'column,row'`, without changing any shapes). The costumes are `COSTUMES` in `js/art.js`, and the seasonal scenery is in `DECOS` in `js/render.js`. `seasonOn(date)` in `js/calendar.js` is a pure function that says which season, if any, a date falls in. `?season=halloween|christmas|easter|none` and `?date=YYYY-MM-DD` force a look or a date.
 
 ## Testing
 
 ### Unit tests
 
-The learning rules in `js/learning.js` have unit tests in `tests/`, written in the words in [The learning domain](domain.md). They need Node 22 or later and nothing else:
+The learning rules in `js/learning.js` and the season dates in `js/calendar.js` have unit tests in `tests/`, written in the words in [The learning domain](domain.md). They need Node 22 or later and nothing else:
 
 ```bash
 node --test "tests/**/*.test.js"
@@ -85,7 +87,7 @@ node --test "tests/**/*.test.js"
 ```bash
 pip install -r tools/playtest/requirements.txt
 playwright install chromium firefox webkit
-python tools/playtest/playtest.py              # robot plays nine scenarios (phone and desktop, all difficulties, every hero, Halloween, Christmas and the normal look)
+python tools/playtest/playtest.py              # robot plays twelve scenarios (phone and desktop, all difficulties, every hero, Halloween, Christmas, Easter and the normal look)
 python tools/playtest/studio_test.py           # voice studio with a pretend microphone
 python tools/playtest/zero_size_test.py        # the game keeps drawing after it starts with no window size
 python tools/playtest/card_test.py             # question card: its size and the answers' sizes, nothing overlaps on any screen size, and no built-in letter sounds
@@ -93,12 +95,13 @@ python tools/playtest/touch_test.py            # plays by touch alone: every con
 python tools/playtest/zoom_test.py             # nothing on any screen lets a double tap or a pinch zoom the page
 python tools/playtest/season_test.py           # the start screen's picture button: switched off stays off in the level, and a double tap counts once
 python tools/playtest/gate_test.py             # the grown-ups check before the settings: children can't get in, grown-ups can
+python tools/playtest/den_test.py              # the den, by touch: tap, feed, play ball, dress up and Lava's colours, remembered and shown in the level
 python tools/playtest/perf_test.py             # performance guard: frame rate, canvas size, music and hidden-page sound
 ```
 
 Each script starts its own local server, which serves the game under `/doodle-builders/` as GitHub Pages does. They fail on a page error or any file the game needs that doesn't load. Screenshots and the exported test voice pack go to `tools/playtest/out/`. Tests that need the settings get past the grown-ups check with `pass_gate()` from `gate_test.py`.
 
-Every pull request runs the unit tests and all nine playtests on GitHub Actions (`.github/workflows/playtests.yml`). If they fail, `tools/playtest/out/` is attached to the run as `playtest-out`.
+Every pull request runs the unit tests and all ten playtests on GitHub Actions (`.github/workflows/playtests.yml`). If they fail, `tools/playtest/out/` is attached to the run as `playtest-out`.
 
 ### Browsers
 
@@ -110,9 +113,9 @@ PLAYTEST_ENGINE=firefox python tools/playtest/touch_test.py   # or webkit; chrom
 
 | Engine | Which browsers use it | Tested on every pull request |
 |---|---|---|
-| Chromium | Chrome, Edge, Samsung Internet, Opera, Vivaldi and Brave, on Android and computers | all nine tests |
-| WebKit | Safari, and every browser on an iPhone or iPad, including Chrome and Vivaldi | `playtest`, `card_test`, `touch_test`, `zoom_test`, `season_test`, `gate_test` |
-| Firefox | Firefox on Android and computers | `playtest`, `card_test`, `touch_test`, `zoom_test`, `season_test`, `gate_test` |
+| Chromium | Chrome, Edge, Samsung Internet, Opera, Vivaldi and Brave, on Android and computers | all ten tests |
+| WebKit | Safari, and every browser on an iPhone or iPad, including Chrome and Vivaldi | `playtest`, `card_test`, `touch_test`, `zoom_test`, `season_test`, `gate_test`, `den_test` |
+| Firefox | Firefox on Android and computers | `playtest`, `card_test`, `touch_test`, `zoom_test`, `season_test`, `gate_test`, `den_test` |
 
 These test the page, not the browser around it. A browser's own buttons and messages can't be seen by a robot, and neither can real phone speakers, microphones or heat, so also try a release by hand on an iPhone (Safari and Chrome) and on an Android phone or tablet (Chrome and Samsung Internet).
 
@@ -145,7 +148,7 @@ Every change goes through a pull request. A ruleset on `main` lets a pull reques
 
 | Check | From | What it checks |
 |---|---|---|
-| Robot playtests | GitHub Actions | the unit tests, all nine playtests, and six of the playtests again in Firefox and WebKit |
+| Robot playtests | GitHub Actions | the unit tests, all ten playtests, and seven of the playtests again in Firefox and WebKit |
 | CodeScene Code Health Review (main) | CodeScene | the Code Health of the changed code |
 | Socket Security: Pull Request Alerts | Socket | any package the pull request adds or changes |
 

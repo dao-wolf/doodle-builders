@@ -18,6 +18,8 @@ SETTINGS = "localStorage.setItem('bobs-outpost-settings', JSON.stringify({ diff:
 # each screen, and how to get to it
 SCREENS = (('start', '() => {}'),
            ('outposts', '() => showLevels()'),
+           ('den', "() => { S.char = 'lava'; openDen(); }"),
+           ('den costumes', "() => { setTray('dress'); }"),
            ('level with a question', "() => { startLevel(0); qi = 0; askQuestion('journey'); }"),
            ('finish', "() => { $('finish').hidden = false; }"),
            ('grown-ups check', '() => askGrownUp(openSettings)'),

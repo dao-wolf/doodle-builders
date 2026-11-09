@@ -70,6 +70,10 @@ jobs:
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: python tools/playtest/gate_test.py
 
+      - name: Den test
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: python tools/playtest/den_test.py
+
       - name: Performance guard
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: python tools/playtest/perf_test.py
@@ -80,7 +84,7 @@ jobs:
         run: |
           status=0
           for engine in firefox webkit; do
-            for test in playtest card_test touch_test zoom_test season_test gate_test; do
+            for test in playtest card_test touch_test zoom_test season_test gate_test den_test; do
               echo "::group::$test in $engine"
               PLAYTEST_ENGINE=$engine python tools/playtest/$test.py || status=1
               echo "::endgroup::"
