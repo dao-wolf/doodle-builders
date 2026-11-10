@@ -8,7 +8,7 @@ const SPEED = +(new URLSearchParams(location.search).get('speed')) || 1; // ?spe
 // screens alike. The game still steps in sixtieths of a second, as it did when it drew every frame.
 const FRAME_MS = 1000 / 30, STEP_MS = 1000 / 60;
 const CARDS = [...document.querySelectorAll('.char')].map(b => [b.querySelector('canvas'), b.dataset.char]); // the start screen's hero cards
-function menuTick(dt) { now += dt; runTasks(); if (den.on) updateDen(dt); } // the menus' clock, queued tasks and the den run when no game is playing
+function menuTick(dt) { now += dt; runTasks(); if (den.on) updateDen(dt); } // the menus' clock, queued tasks and the hero's house run when no game is playing
 function tick(dt) { if (!playing) return menuTick(dt); if (!isPaused()) update(dt); }
 function frame(t) {
   requestAnimationFrame(frame); // first, so a frame that throws can't stop the game for good

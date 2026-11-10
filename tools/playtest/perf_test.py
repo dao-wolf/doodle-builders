@@ -6,6 +6,8 @@ On the question screen at tablet size (1024x1366 at 2x), the test fails if:
 - the canvas has more pixels than BUDGET (the same number as MAX_PIXELS in js/game.js: raise both together, on purpose)
 - the music is off but notes are still being synthesised
 - a hidden page doesn't suspend the sound
+Then in the hero's house (the code calls it the den), with a letter or number waiting to be traced, the frame rate and the canvas
+size must pass the same two tests: the house draws on the same loop, but it has its own screen, so it gets its own check.
 None of these depend on how fast the machine is. For timings, run perf_report.py.
 
     python tools/playtest/perf_test.py
@@ -51,6 +53,17 @@ async def checks(page, errors):
     print(f"perf: {off['fps']:.1f} fps, canvas {px} px (budget {BUDGET}), notes/s music off {off['notes']:.1f}, on {on['notes']:.1f}")
 
 
+async def house_checks(page, errors):
+    """The hero's house, tracing: at the same frame rate and under the same canvas budget as the levels."""
+    await page.evaluate('setMusic(false); goTitle(); showLevels(); openDen()'); await page.wait_for_timeout(1500)
+    if await page.evaluate('den.phase') != 'trace': errors.append('the house did not open with a letter or number to trace'); return
+    house = await page.evaluate(RATES)
+    if not 20 <= house['fps'] <= 31: errors.append(f"the house drew {house['fps']:.1f} frames a second, expected 20 to 31")
+    px = await page.evaluate('cv.width * cv.height')
+    if px > BUDGET: errors.append(f'the house canvas has {px} pixels, over the budget of {BUDGET}')
+    print(f"perf: house {house['fps']:.1f} fps, canvas {px} px (budget {BUDGET})")
+
+
 async def main():
     os.makedirs(OUT, exist_ok=True)
     srv = localsite.serve(PORT)
@@ -60,6 +73,7 @@ async def main():
         errors = []; localsite.watch(page, errors, PORT, 'perf')
         await start(page)
         await checks(page, errors)
+        await house_checks(page, errors)
         print('perf: errors:', errors)
         await browser.close()
     srv.shutdown()

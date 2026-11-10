@@ -1,9 +1,11 @@
-"""Tests the den, where a child looks after their hero, by touch alone.
+"""Tests the hero's house (the code calls it the den), where a child feeds their hero by tracing, by finger alone.
 
-For each hero: the den opens from the outposts screen; tapping the hero, feeding them and playing ball all work; and every
-control is a big enough target. Dressing up changes the hero's costume on screen (the pictures differ), is remembered after the
-page reloads, and shows in the level that follows. Lava also changes colour. Nothing the child does can end the den: it carries
-on after every tap. A page error fails the test.
+For each hero: the house opens from the outposts screen; every control is a big enough target; tapping the hero makes them happy;
+a right trace of the letter or number sends a snack to the hero and fills a part of the snack bar; a trace that strays off the
+path loses nothing (the dots glow, the voice says what to trace, and the child carries on); three snacks fill the bar and make the
+hero dance, and the bar never drains in between. Dressing up changes the hero's costume on screen (the pictures differ), is
+remembered after the page reloads, and shows in the level that follows. Lava also changes colour. Nothing the child does can end
+the house: it carries on after every touch. A page error fails the test.
 
     python tools/playtest/den_test.py
     PLAYTEST_ENGINE=webkit python tools/playtest/den_test.py
@@ -21,7 +23,7 @@ SEASONS_OFF = {'outfits': {'lava': 'halloween', 'bob': 'easter'}, 'lavaColour': 
 CENTRE = "s => { const r = document.querySelector(s).getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }"
 HEROES = ('bob', 'henry', 'dragon', 'lava')
 OUTFITS = ('none', 'halloween', 'christmas', 'easter')
-BUTTONS = ('#denBack', '#denFeed', '#denPlay', '#denDress')
+BUTTONS = ('#denBack', '#denDress', '#denNext')
 SIDEWAYS_SIZES = ((844, 390), (667, 375))  # a phone held sideways: an iPhone, and an older one
 OUTPOSTS_SCREEN = ('#lvlBack', '#denBtn', '.lvl[data-lvl="0"]', '.lvl[data-lvl="3"]')  # what must be in view at once: the buttons, and the first and last outposts
 MIN_TARGET = 44  # px: the smallest a touch target should be
@@ -47,12 +49,33 @@ IN_VIEW = """s => {
   const r = e.getBoundingClientRect();
   return r.width > 0 && r.height > 0 && r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight;
 }"""
-# Where the hero and ball are, and whether both are on screen (a ball that is missing fails): { ok, where }
+# Where the hero and the letter are, and whether both are wholly on screen: { ok, where }
 TURNED = """(() => {
-  const where = { x: denX(), top: GY - DEN_HEIGHT[S.char] * denScale(), ball: den.ball && den.ball.x, W, H, GY };
-  const ball = typeof where.ball === 'number' && 0 <= where.ball && where.ball <= W;
-  return { ok: 0 < where.x && where.x < W && where.top > 0 && ball, where };
+  const { box } = houseLayout(), half = box.size / 2, k = denScale();
+  const where = { x: denX(), top: GY - DEN_HEIGHT[S.char] * k, left: box.cx - half, right: box.cx + half, up: box.cy - half, down: box.cy + half, W, H };
+  const letter = where.left >= 0 && where.right <= W && where.up >= 0 && where.down <= H;
+  const heroOn = where.x - 70 * k >= 0 && where.x + 70 * k <= W && where.top > 0;
+  return { ok: letter && heroOn, where };
 })()"""
+# The strokes of what is being traced, as points on the page (every other point, to keep it quick): a list of strokes
+STROKES = """(() => {
+  const r = cv.getBoundingClientRect();
+  return den.shape.strokes.map(s => s.pts.filter((_, i) => i % 2 === 0 || i === s.pts.length - 1).map(p => { const [x, y] = shapeSpot(p); return [r.left + x * SC, r.top + y * SC]; }));
+})()"""
+# A place on the page as far from the letter's path as any in the letter's box, and not on the hero: a finger put there is off the path
+AWAY = """(() => {
+  const r = cv.getBoundingClientRect(), { box } = houseLayout(), spots = den.shape.strokes.flatMap(s => s.pts.map(shapeSpot));
+  let best = null, far = -1;
+  for (let i = 0; i <= 8; i++) for (let j = 0; j <= 8; j++) {
+    const x = box.cx + (i / 8 - 0.5) * box.size, y = box.cy + (j / 8 - 0.5) * box.size;
+    if (tapsHero(x, y)) continue;
+    const d = Math.min(...spots.map(([sx, sy]) => Math.hypot(sx - x, sy - y)));
+    if (d > far) { far = d; best = [x, y]; }
+  }
+  return [r.left + best[0] * SC, r.top + best[1] * SC];
+})()"""
+# Counts what the game says: wraps talk() so a test can read which lines were asked for
+SPY = "window.__said = []; const was = talk; window.talk = (parts, ...rest) => { window.__said.push(parts); return was(parts, ...rest); }; true"
 
 
 class Visit(NamedTuple):  # one page to open: the hero, a label for error reports, the query string, any saved settings on top of BASE, the window size
@@ -86,10 +109,6 @@ async def in_view(page, selector):  # shown, and wholly inside the window
 
 def is_target(box):  # there, and at least MIN_TARGET px each way
     return bool(box) and min(box['width'], box['height']) >= MIN_TARGET
-
-
-def in_meadow(where):  # the ball is inside the meadow's width and not below the ground
-    return 0 <= where['x'] <= where['W'] and where['y'] <= where['GY']
 
 
 def colour_chips(hero):  # Lava alone has colours to choose
@@ -132,27 +151,111 @@ async def check_pet(page, errors, hero):
     await page.wait_for_timeout(1800)
 
 
-async def check_feed(page, errors, hero):
-    await tap(page, '#denFeed'); await page.wait_for_timeout(300)
-    expect(errors, await page.evaluate('den.snack'), f'{hero}: feeding showed no snack')
-    await page.wait_for_timeout(300); await tap(page, '#denFeed')  # a second tap while eating must not break anything
-    await wait_until_gone(page, 'den.snack')
-    if await page.evaluate('den.snack'): errors.append(f'{hero}: the snack was never eaten')
+async def drag(page, points):  # a finger goes down at the first point, along the others, and lifts
+    await page.mouse.move(*points[0]); await page.mouse.down()
+    for point in points[1:]: await page.mouse.move(*point)
+    await page.mouse.up()
+
+
+async def trace_right(page):  # follows the whole letter or number, stroke by stroke
+    for stroke in await page.evaluate(STROKES): await drag(page, stroke)
+    await page.wait_for_timeout(100)
+
+
+async def wait_for_phase(page, phase, timeout=15000):  # the house is tracing again, dancing, and so on
+    await page.wait_for_function(f'den.phase === "{phase}"', timeout=timeout)
+
+
+async def check_trace_feeds(page, errors, hero):
+    """A right trace sends a snack to the hero and fills one part of the snack bar; the hero eats it and is happy; a new letter or
+    number comes; and the bar stays as it is (nothing takes a snack back)."""
+    await wait_for_phase(page, 'trace')
+    before, asked = await page.evaluate('[den.bar.filled, den.asked]')
+    await trace_right(page)
+    expect(errors, await page.evaluate('den.bar.filled') == before + 1, f'{hero}: a right trace did not fill a part of the snack bar')
+    expect(errors, await page.evaluate('den.snacks.length') >= 1, f'{hero}: a right trace sent no snack')
+    await wait_until_gone(page, 'den.snacks.length')
+    if await page.evaluate('den.snacks.length'): errors.append(f'{hero}: the snack was never eaten')
     else: expect(errors, await page.evaluate('den.happyT > 0'), f'{hero}: the hero was not happy after eating')
-    await page.wait_for_timeout(1500)
+    await wait_for_phase(page, 'trace')
+    expect(errors, await page.evaluate('den.asked') > asked, f'{hero}: no new letter or number came after the snack')
+    await page.wait_for_timeout(3000)  # about 7 s of game time: the bar must not drain
+    expect(errors, await page.evaluate('den.bar.filled') == before + 1, f'{hero}: the snack bar drained over time')
 
 
-async def check_ball(page, errors, hero):
-    await tap(page, '#denPlay'); await page.wait_for_timeout(300)
-    if not await page.evaluate('den.ball'): errors.append(f'{hero}: Play showed no ball'); return
-    await page.wait_for_timeout(2500)
-    # stop the ball where it is (the hero's nudge and her head bounce would move it between the reading and the tap), then tap it at once
-    where = await page.evaluate('(() => { const b = den.ball; b.vx = b.vy = 0; b.rest = -5; b.y = GY - ballRadius(); return { x: b.x, y: b.y, W, GY, SC }; })()')
-    expect(errors, in_meadow(where), f'{hero}: the ball left the meadow: {where}')
-    await tap_world(page, where['x'], where['y'], where['SC']); await page.wait_for_timeout(60)  # a tap kicks it
-    expect(errors, await page.evaluate('den.ball.vy < 0'), f'{hero}: tapping the ball did not kick it')
-    await tap(page, '#denPlay'); await page.wait_for_timeout(200)
-    expect(errors, not await page.evaluate('den.ball'), f'{hero}: pressing Play again did not put the ball away')
+async def check_off_path(page, errors, hero):
+    """A touch that lands away from the start dot, and a finger that strays off the path, lose nothing: the dots glow, the voice
+    says what to trace, the progress and the snack bar stay as they were, and the child carries on from where they left off."""
+    await wait_for_phase(page, 'trace')
+    await page.evaluate(SPY)
+    bar = await page.evaluate('den.bar.filled')
+    away = await page.evaluate(AWAY); strokes = await page.evaluate(STROKES); first = strokes[0]
+    await page.mouse.move(*away); await page.mouse.down(); await page.mouse.move(away[0] + 12, away[1]); await page.mouse.up()
+    expect(errors, await page.evaluate('den.glow > 0'), f'{hero}: a touch away from the start did not make the dots glow')
+    expect(errors, await page.evaluate('den.trace.progress.every(p => p === 0)'), f'{hero}: a touch away from the start counted as progress')
+    said = await page.evaluate('window.__said.length')
+    expect(errors, said >= 1, f'{hero}: the voice said nothing when the finger was off the path')
+    expect(errors, await page.evaluate('JSON.stringify(window.__said.at(-1)) === JSON.stringify(itemVoice(den.item))'), f'{hero}: the voice did not say the letter or number')
+    await wait_until_gone(page, 'den.glow > 0', polls=100)  # up to 10 s: the glow fades in game time, which runs slowly on a busy machine
+    expect(errors, await page.evaluate('den.glow === 0'), f'{hero}: the glow did not fade')
+    half = first[:max(3, len(first) // 3)]
+    await page.mouse.move(*half[0]); await page.mouse.down()
+    for point in half[1:]: await page.mouse.move(*point)
+    reached = await page.evaluate('den.trace.progress[0]')
+    expect(errors, reached > 0, f'{hero}: a trace from the start dot made no progress')
+    await page.mouse.move(*away)  # strays off the path, with the finger still down
+    expect(errors, await page.evaluate('den.glow > 0'), f'{hero}: straying off the path did not make the dots glow')
+    kept = await page.evaluate('den.trace.progress[0]')
+    expect(errors, kept >= reached, f'{hero}: straying off the path lost progress')
+    await page.mouse.move(away[0] + 6, away[1] + 6)
+    expect(errors, await page.evaluate('den.trace.progress[0]') == kept, f'{hero}: progress changed while the finger was off the path')
+    expect(errors, await page.evaluate('den.bar.filled') == bar and await page.evaluate('den.phase') == 'trace', f'{hero}: straying off the path changed the snack bar or ended the round')
+    await page.mouse.move(*half[-1])  # back where it left
+    for point in first[len(half):]: await page.mouse.move(*point)
+    await page.mouse.up()
+    for stroke in strokes[1:]: await drag(page, stroke)
+    await page.wait_for_timeout(100)
+    expect(errors, await page.evaluate('den.bar.filled') == bar + 1, f'{hero}: carrying on after straying did not feed the hero')
+    await wait_for_phase(page, 'trace')
+
+
+async def check_bar(page, errors, hero):
+    """Three snacks fill the bar and the hero does a happy dance, then a new bar starts."""
+    await wait_for_phase(page, 'trace')
+    for _ in range(5):  # at most five tries, so a bar that never fills fails the test instead of hanging it
+        before = await page.evaluate('den.bar.filled')
+        if before >= 3: break
+        await trace_right(page)
+        expect(errors, await page.evaluate('den.bar.filled') == before + 1, f'{hero}: snack {before + 1} did not fill a part of the bar')
+        if before + 1 < 3: await wait_for_phase(page, 'trace')
+    expect(errors, await page.evaluate('den.bar.full'), f'{hero}: three snacks did not fill the bar')
+    await wait_for_phase(page, 'dance', 15000)
+    expect(errors, await page.evaluate('den.bar.filled') == 3, f'{hero}: the bar emptied before the hero danced')
+    await page.wait_for_timeout(500)
+    expect(errors, await page.evaluate('den.happyT > 0 || den.h > 0'), f'{hero}: the hero did not dance')
+    await wait_for_phase(page, 'trace', 15000)
+    expect(errors, await page.evaluate('den.bar.filled') == 0, f'{hero}: the bar did not start again after the dance')
+
+
+async def check_another(page, errors, hero):  # the shuffle picture gives a different letter or number
+    await wait_for_phase(page, 'trace')
+    asked, filled = await page.evaluate('[den.asked, den.bar.filled]')
+    await tap(page, '#denNext'); await page.wait_for_timeout(200)
+    expect(errors, await page.evaluate('den.asked') == asked + 1 and await page.evaluate('den.phase') == 'trace', f'{hero}: Another did not bring a new letter or number')
+    expect(errors, await page.evaluate('den.bar.filled') == filled, f'{hero}: Another changed the snack bar')
+
+
+async def check_house_button(browser, errors, hero):
+    """On the outposts screen, the way into the house is a picture of a house, big enough to touch, named for the hero."""
+    page = await start_page(browser, errors, Visit(hero, f'{hero} house button'))
+    await tap(page, f'.char[data-char="{hero}"]'); await page.wait_for_timeout(400)
+    box = await page.locator('#denBtn').bounding_box()
+    expect(errors, is_target(box), f'{hero}: the house button is smaller than {MIN_TARGET}px: {box}')
+    label = await page.evaluate('$("denBtn").getAttribute("aria-label")')
+    name = await page.evaluate('HEROES[S.char].name')
+    expect(errors, label == f"Visit {name}'s house", f'{hero}: the house button is named {label!r}')
+    expect(errors, await page.evaluate('$("denBtn").querySelector("svg") !== null && $("denBtn").innerText.trim() === ""'), f'{hero}: the house button should be a picture, with no words')
+    await page.close()
 
 
 async def choose_outfit(page, errors, hero, outfit):  # taps one costume, checks it was saved and marked as chosen, and returns the hero's picture
@@ -282,9 +385,8 @@ async def check_on_screen(page, errors, selector):
 
 
 async def check_turned(browser, errors):
-    """Turning the phone on its side keeps the hero, the ball and the buttons on screen, and the page doesn't scroll."""
+    """Turning the phone on its side keeps the hero, the letter and the buttons on screen, and the page doesn't scroll."""
     page = await open_den(browser, errors, Visit('lava', 'turned'))
-    await tap(page, '#denPlay'); await page.wait_for_timeout(500)
     await page.set_viewport_size({'width': 844, 'height': 390}); await page.wait_for_timeout(800)
     seen = await page.evaluate(TURNED)
     expect(errors, seen['ok'], f'turned on its side, something is off screen: {seen["where"]}')
@@ -299,7 +401,7 @@ async def check_back(page, errors, hero):
 
 async def check_hero(browser, errors, hero):
     page = await open_den(browser, errors, Visit(hero, f'{hero} den'))
-    for check in (check_open_and_targets, check_pet, check_feed, check_ball, check_dress, check_back):
+    for check in (check_open_and_targets, check_pet, check_trace_feeds, check_off_path, check_another, check_bar, check_dress, check_back):
         await attempt(errors, f'{hero}: {check.__name__}', check(page, errors, hero))
     await page.close()
 
@@ -309,7 +411,9 @@ async def main():
     srv = localsite.serve(PORT); errors = []
     async with async_playwright() as p:
         browser = await localsite.launch(p)
-        for hero in HEROES: await check_hero(browser, errors, hero)
+        for hero in HEROES:
+            await attempt(errors, f'{hero}: house button', check_house_button(browser, errors, hero))
+            await check_hero(browser, errors, hero)
         for check in (check_lava_colour, check_weather, check_turned, check_seasons_off, check_sideways_reach):
             await attempt(errors, check.__name__, check(browser, errors))
         for hero in ('bob', 'lava'):

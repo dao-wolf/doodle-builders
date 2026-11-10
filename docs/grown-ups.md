@@ -18,6 +18,8 @@ On the start screen, press and hold **Grown-ups**. During a game, press and hold
 | Seasonal themes | Automatic, Halloween, Christmas, Easter, Off |
 | Outposts | Unlock all, or start again from outpost 1 |
 
+**Game**, **Letters to practise** and **Numbers** also choose what children trace in the hero's house, where tracing a letter or a number feeds their hero (see [The hero's house](den.md)). They trace single letters only, in lower case, whatever **Letters shown as** says: a week made only of two-letter sounds such as `sh` falls back to the single letters taught so far.
+
 ## Seasonal themes
 
 The game dresses up for the seasons, then goes back to normal:
@@ -36,7 +38,7 @@ While a season is on, a big picture button (a pumpkin, a Christmas tree or an eg
 | Halloween | The Halloween look whatever the date |
 | Christmas | The Christmas look whatever the date |
 | Easter | The Easter look whatever the date |
-| Off | No seasonal look, no picture button, and no costumes: heroes wear nothing in the [den](den.md) or in levels, and the den's costume buttons are hidden. A costume a child picked stays saved and comes back when you change this setting. Lava's colours are not costumes, so they stay |
+| Off | No seasonal look, no picture button, and no costumes: heroes wear nothing in the [hero's house](den.md) or in levels, and the house's costume buttons are hidden. A costume a child picked stays saved and comes back when you change this setting. Lava's colours are not costumes, so they stay |
 
  The outposts keep the same shapes and pieces, so the game plays the same.
 
