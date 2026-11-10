@@ -30,7 +30,7 @@ A static HTML, canvas and JavaScript learning game for children aged 2 to 5 (pho
 - Sizes: the question card is drawn at `--card-k` (0.8, in `css/style.css`) and the answers at `ANSWER_K` (1.1, in `js/game.js`) of their first sizes. Change a size there, not one dimension at a time; `card_test.py` checks both.
 - The page never zooms. Every element sets its own `touch-action` (Safari on iPhones doesn't pass body's on to positioned elements, so a double tap zoomed and couldn't be undone). `zoom_test.py` checks every screen.
 - Settings sit behind a grown-ups check after the hold: a number from 21 to 99 shown only in words, never spoken, new each time, and locked for a minute after three wrong answers. A 4 year old got past the hold alone, so don't make the check easier.
-- The den (`js/den.js`, see [docs/den.md](docs/den.md)) must stay free of failure: no score, no timer, nothing to forget, no sad hero, and picture-only controls at least 44 px.
+- The hero's house (the code still calls it the den: `js/den.js`, see [docs/den.md](docs/den.md)) must stay free of failure: no score, no timer, nothing to forget, no sad hero, and picture-only controls at least 44 px.
 - Defaults are in `DEFAULTS` (`js/settings.js`): game mode Both, Autumn 1 sounds, lowercase letters, numbers 1 to 5, movement "I steer", difficulty Easy, voice Natural (Jenny) with own recordings first. Change them only on purpose.
 - The "Jenny (Dioco)" credit must stay visible (licence requirement).
 - British English and plain words in all copy, comments and docs.
