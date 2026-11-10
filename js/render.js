@@ -289,8 +289,8 @@ const LOOKS = {
     walk: (o, sw) => { o.legL = sw * 0.8; o.legR = -sw * 0.8; o.flap = 0.1 + Math.abs(sw) * 0.3; },
     air: o => { o.flap = 1.1; o.legL = 0.5; o.legR = -0.4; },
     happy: (o, time) => { o.flap = 0.9 + Math.sin(time * 18) * 0.35; },
-    charge: (o, k) => { o.glow = k; o.headTilt = -0.12 * k; o.face = { eyes: 'squint', mouth: 'puff' }; o.sy = 1 + 0.05 * k; o.tailUp = k; o.flap = 0.35 * k; },
-    blow: (o, k) => { o.glow = Math.max(0.4, k); o.headTilt = 0.1 * k; o.face = { eyes: 'squint', mouth: 'open' }; o.sx = 1 + 0.05 * k; o.flap = 0.6; },
+    charge: (o, k) => { const peck = Math.pow(Math.sin(k * Math.PI * 2), 2); o.lean = 0.5 * peck; o.headTilt = 0.45 * peck; o.face = { eyes: 'squint', mouth: 'O' }; o.tailUp = 0.4 * peck; o.flap = 0.2; }, // two pecks at the ground
+    blow: (o, k) => { o.glow = Math.max(0.4, k); o.lean = 0.2 * k; o.headTilt = -0.1 * k; o.face = { eyes: 'squint', mouth: 'grin' }; o.sy = 1 + 0.04 * k; o.flap = 0.6; }, // head back up, proud, as the lava pops
     look: softLook,
     dance: (o, p) => { o.flap = 0.7 + 0.5 * p; o.legL = 0.3 * Math.max(0, p); o.legR = 0.3 * Math.max(0, -p); o.headTilt = 0.1 * p; } },
 };
@@ -358,6 +358,16 @@ function drawCarry(time) { // the piece the hero carries, with a pulsing glow
   ctx.fillStyle = `rgba(255,236,140,${0.25 + 0.25 * pulse})`; ctx.fillRect(carry.x - p.ext.w * carry.s / 2 - 12, y - p.ext.h * carry.s / 2 - 12, p.ext.w * carry.s + 24, p.ext.h * carry.s + 24);
   drawPiece(p, carry.x, y, carry.s, time);
 }
+function drawCrack(p) { // Lava's crack runs out along the ground in a zigzag, glowing at its edges, then fades
+  const STEP = 5, len = Math.floor(clamp(p.age / p.len, 0, 1) * p.reach / STEP);
+  ctx.globalAlpha = clamp((p.life - p.age) * 3, 0, 1);
+  for (let i = 0; i < len; i++) { // a triangle wave, 40 px from peak to peak
+    const x = p.x + p.dir * i * STEP, y = p.y + (Math.abs((i * STEP) % 40 - 20) / 20 - 0.5) * 14;
+    ctx.fillStyle = '#ff9a3c'; ctx.fillRect(x - 4, y - 4, 8, 8);
+    ctx.fillStyle = p.c; ctx.fillRect(x - 2, y - 2, 5, 5);
+  }
+  ctx.globalAlpha = 1;
+}
 function drawEffects(time) { // flying pieces, sparkles and smoke, score pops, falling bits
   flyers.forEach(f => {
     const k = easeInOut((now - f.t0) / f.dur);
@@ -366,6 +376,7 @@ function drawEffects(time) { // flying pieces, sparkles and smoke, score pops, f
   });
   parts.forEach(p => {
     const f = 1 - p.age / p.life;
+    if (p.kind === 'crack') { drawCrack(p); return; }
     if (p.kind === 'cloud') { const s = p.s * (1 + (p.grow - 1) * (p.age / p.life)); ctx.globalAlpha = clamp(f * 1.6, 0, 0.9); ctx.fillStyle = p.c; ctx.fillRect(p.x - s / 2, p.y - s / 2, s, s); ctx.globalAlpha = 1; return; }
     ctx.globalAlpha = clamp(f * 2.5, 0, 1); ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = p.c; ctx.fillRect(-p.s / 2, -p.s / 2, p.s, p.s); ctx.restore();
   });

@@ -1,0 +1,60 @@
+name: Voice check
+
+# A person must listen to every new or changed voice clip before it merges. The clips are speech
+# recognition-checked and measured, but a clip that "heard" right can still sound like other words
+# to a person. So a pull request that changes voice/jenny.json fails this check until it has the
+# `voice-listened` label, and the label is only for someone who has listened to the clips.
+#
+# The check re-runs when labels change. If a later push changes voice/jenny.json again, the label is
+# taken off, so the new clip has to be listened to as well. See voice/README.md.
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, labeled, unlabeled]
+
+permissions:
+  contents: read
+  pull-requests: write # to take the label off after a push that changes the voice file
+
+jobs:
+  voice-listened:
+    name: Voice listened
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Voice clips listened to before merging
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          ACTION: ${{ github.event.action }}
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.event.after }}
+        run: |
+          set -euo pipefail
+          FILE=voice/jenny.json
+          LABEL=voice-listened
+
+          changed=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename')
+          if ! grep -qxF "$FILE" <<<"$changed"; then
+            echo "This pull request does not change $FILE, so there is no new voice to listen to."
+            exit 0
+          fi
+
+          labels=$(gh api "repos/$REPO/issues/$PR/labels" --paginate --jq '.[].name')
+          if ! grep -qxF "$LABEL" <<<"$labels"; then
+            echo "::error::This pull request changes $FILE. Listen to every new or changed clip, then add the '$LABEL' label (see voice/README.md)."
+            exit 1
+          fi
+
+          # The label is there. If this push changed the voice file again, what was listened to is out of date.
+          if [ "$ACTION" = synchronize ]; then
+            push_changed=$(gh api "repos/$REPO/compare/$BEFORE...$AFTER" --jq "[.files[].filename] | index(\"$FILE\") != null" 2>/dev/null || echo true)
+            if [ "$push_changed" != false ]; then
+              gh pr edit "$PR" --repo "$REPO" --remove-label "$LABEL" || echo "::warning::Could not remove the label; a maintainer should take it off."
+              echo "::error::A new push changed $FILE after the '$LABEL' label was added. Listen to the new clips, then add the label again."
+              exit 1
+            fi
+          fi
+
+          echo "$FILE changed, and the '$LABEL' label is on, with no push to $FILE since."

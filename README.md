@@ -11,7 +11,7 @@ A learning game for children aged 2 to 5: answer phonics and number questions to
 
 ## What's in the game
 
-- **Bob's Outpost**, the first adventure. Play as Bob (sneezes Nibblers away), Mr Henry (trumps them away), Dragon Fly (a floating robot dragon that breathes red fire at them) or Lava (a chicken that spews warm, friendly lava, in sunny or lagoon colours), collect the pieces of an outpost on a journey, keep the Nibblers off them, then build it. Four outposts: Hilltop Hut, Treehouse, Lighthouse and Snow Castle.
+- **Bob's Outpost**, the first adventure. Play as Bob (sneezes Nibblers away), Mr Henry (trumps them away), Dragon Fly (a floating robot dragon that breathes red fire at them) or Lava (a chicken that pecks the ground, so warm, friendly lava pops up out of the cracks on both sides, in sunny or lagoon colours), collect the pieces of an outpost on a journey, keep the Nibblers off them, then build it. Four outposts: Hilltop Hut, Treehouse, Lighthouse and Snow Castle.
 - **Letters** in the Little Wandle Letters and Sounds Revised Reception order (Autumn 1 to Spring 1).
 - **Numbers**: find the number (1 to 5 or 1 to 10) and count gems.
 - **Gentle help**: everything is spoken as well as shown, and a wrong answer gets a hint and another go.
