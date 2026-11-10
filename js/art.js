@@ -356,7 +356,7 @@ const DF_MOUTH = { // at the front of the snout; an open mouth glows with fire
   puff: () => ctx.fillRect(72, -141, 8, 2),
 };
 function dragonMouth(f) { ctx.fillStyle = '#221a1e'; (DF_MOUTH[f.mouth] || DF_MOUTH.smile)(f); }
-// Lava: a chicken that spews friendly lava, from a child's drawing: a big round head, one big eye, a pointed beak, a small wing
+// Lava: a chicken who pecks the ground and pops friendly lava out of the cracks, from a child's drawing: a big round head, one big eye, a pointed beak, a small wing
 // with finger-like feathers and a curly tail. Drawn side-on, facing the way she walks (right). She comes in two colours, which
 // a child picks in the den (S.lavaColour); the lava is always orange and yellow.
 const LAVA_PALS = {
@@ -391,7 +391,7 @@ function lavaWing(time, flap) { // a small wing with three finger-like feathers
   ctx.restore();
 }
 function lavaLeg(x, a) { ctx.save(); ctx.translate(x, -30); ctx.rotate(a); pixel(-3, 0, 6, 20, LP.leg); pixel(-3, 0, 2, 20, 'rgba(255,255,255,.25)'); pixel(-5, 20, 18, 5, LP.leg); pixel(8, 21, 4, 4, LP.beakDk); pixel(-5, 24, 18, 2, 'rgba(0,0,0,.18)'); ctx.restore(); }
-function lavaBody(glow) { // a round body with a pale belly that glows when she is about to spew
+function lavaBody(glow) { // a round body with a pale belly that glows when lava is about to pop
   roundBlob(-4, -54, 38, 30, LP.shade); roundBlob(-4, -56, 36, 28, LP.body); roundBlob(10, -46, 20, 16, LP.belly);
   if (glow) { const k = 0.5 + glow / 2; roundBlob(10, -46, 18 * k, 14 * k, '#ff8a2b'); roundBlob(10, -46, 10 * k, 8 * k, '#ffe27a'); }
   pixel(-30, -72, 18, 4, 'rgba(255,255,255,.3)');
@@ -400,17 +400,19 @@ function lavaComb() { // the big round comb
   roundBlob(4, -132, 11, 11, LP.comb); roundBlob(21, -140, 13, 13, LP.comb); roundBlob(38, -132, 11, 11, LP.comb);
   pixel(15, -150, 10, 4, LP.combHi); pixel(-2, -138, 4, 4, LP.combHi); pixel(35, -138, 4, 4, LP.combHi);
 }
-const LAVA_POSE = { legL: 0, legR: 0, flap: 0.1, glow: 0, tailUp: 0, headTilt: 0, rot: 0, sx: 1, sy: 1, face: {} }; // how she stands when a pose says nothing
+const LAVA_POSE = { legL: 0, legR: 0, flap: 0.1, glow: 0, tailUp: 0, headTilt: 0, lean: 0, rot: 0, sx: 1, sy: 1, face: {} }; // how she stands when a pose says nothing
 function drawLava(b, time, pose = {}) {
   LP = LAVA_PALS[S.lavaColour] || LAVA_PALS.sunny;
   const o = { ...LAVA_POSE, ...pose }, sq = b.squash || 0, sx = o.sx * (1 + sq * 0.7), sy = o.sy * (1 - sq);
   ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(o.rot); ctx.scale(sx, sy);
-  ctx.save(); ctx.translate(-30, -50); ctx.rotate(Math.sin(time * 3) * 0.04 + o.tailUp * 0.12); ctx.translate(30, 50); lavaTail(time, o.glow); ctx.restore();
   lavaLeg(-12, o.legL); lavaLeg(12, o.legR);
+  ctx.save(); ctx.translate(-4, -54); ctx.rotate(o.lean); ctx.translate(4, 54); // she bows from the hips, legs planted, to peck the ground
+  ctx.save(); ctx.translate(-30, -50); ctx.rotate(Math.sin(time * 3) * 0.04 + o.tailUp * 0.12); ctx.translate(30, 50); lavaTail(time, o.glow); ctx.restore();
   lavaBody(o.glow);
   lavaWing(time, o.flap);
   wear('lavaBody', time);
   lavaHead(time, o);
+  ctx.restore();
   ctx.restore();
 }
 function lavaHead(time, o) {
