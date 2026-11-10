@@ -97,9 +97,14 @@ python tools/playtest/season_test.py           # the start screen's picture butt
 python tools/playtest/gate_test.py             # the grown-ups check before the settings: children can't get in, grown-ups can
 python tools/playtest/den_test.py              # the den, by touch: tap, feed, play ball, dress up and Lava's colours, remembered and shown in the level
 python tools/playtest/perf_test.py             # performance guard: frame rate, canvas size, music and hidden-page sound
+python tools/playtest/silence_test.py          # the tools themselves: every engine is silent (not one of the ten, and not run on GitHub Actions yet)
 ```
 
 Each script starts its own local server, which serves the game under `/doodle-builders/` as GitHub Pages does. They fail on a page error or any file the game needs that doesn't load. Screenshots and the exported test voice pack go to `tools/playtest/out/`. Tests that need the settings get past the grown-ups check with `pass_gate()` from `gate_test.py`.
+
+**The tools run silently.** Every script starts its browser with `launch()` from `tools/playtest/localsite.py`, which mutes it in every engine, so a run makes no sound however many browsers it opens. Chromium gets `--mute-audio`, and Firefox gets the preference `media.volume_scale` 0. WebKit (Safari's engine) has no way to mute it, so every page it opens first runs a small script that sends the game's sound through a gain of 0 before it reaches the speakers and tells the device voice to speak at volume 0. The sound still runs, so what the tests and the performance report measure is the same, and nothing in the game changes. Before 10 Nov 2026 Firefox and WebKit played the game's sound aloud, which made it hard to do anything else while the tests ran. Start browsers only through `localsite.launch()`: `silence_test.py` fails if a script starts one another way, or if a page lacks the silencer.
+
+**The local server keeps up with many pages.** The server shares a process with the robots, so when twelve are busy it can fall behind on accepting connections. macOS limits the operating system's queue of waiting connections to 128 (`sysctl kern.ipc.somaxconn`), and when the queue was full the connection was reset, a script such as `js/game.js` didn't load, and `playtest.py` sometimes failed with errors like "renderCard is not defined". `localsite.Server` now has a thread that does nothing but accept connections, which keeps the queue nearly empty. Linux, where GitHub Actions runs, was not affected.
 
 Every pull request runs the unit tests and all ten playtests on GitHub Actions (`.github/workflows/playtests.yml`). If they fail, `tools/playtest/out/` is attached to the run as `playtest-out`.
 
