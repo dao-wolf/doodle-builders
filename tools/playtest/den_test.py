@@ -196,7 +196,7 @@ async def check_off_path(page, errors, hero):
     said = await page.evaluate('window.__said.length')
     expect(errors, said >= 1, f'{hero}: the voice said nothing when the finger was off the path')
     expect(errors, await page.evaluate('JSON.stringify(window.__said.at(-1)) === JSON.stringify(itemVoice(den.item))'), f'{hero}: the voice did not say the letter or number')
-    await page.wait_for_timeout(1500)
+    await wait_until_gone(page, 'den.glow > 0', polls=100)  # up to 10 s: the glow fades in game time, which runs slowly on a busy machine
     expect(errors, await page.evaluate('den.glow === 0'), f'{hero}: the glow did not fade')
     half = first[:max(3, len(first) // 3)]
     await page.mouse.move(*half[0]); await page.mouse.down()
