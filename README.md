@@ -15,14 +15,14 @@ A learning game for children aged 2 to 5: answer phonics and number questions to
 - **Letters** in the Little Wandle Letters and Sounds Revised Reception order (Autumn 1 to Spring 1).
 - **Numbers**: find the number (1 to 5 or 1 to 10) and count gems.
 - **Gentle help**: everything is spoken as well as shown, and a wrong answer gets a hint and another go.
-- **The den**: a meadow where a child looks after their hero. Tap them, feed them, play ball and dress them up in any costume; Lava can change colour. There are no scores and nothing to get wrong. See [The den](docs/den.md).
+- **The hero's house** ("Lava's house", "Bob's house" and so on): a meadow where a child feeds their hero by tracing a letter or number with a finger. A right trace sends a snack flying to the hero, and three snacks make the hero dance. Children can also dress them up in any costume; Lava can change colour. There are no scores and nothing to get wrong, and a trace that strays loses nothing. See [The hero's house](docs/den.md).
 - **Your own voice**: record letter sounds, numbers and lines in the voice studio and the game uses your voice first. Letter sounds only play if you record them, because the built-in voices can't say them properly.
 - **Seasonal looks**: Halloween (15 October to 3 November), Christmas (4 November to 6 January) and Easter (two weeks before Easter Sunday to a week after it) dress up the lands, outposts and heroes. Children can switch the look off and on with a picture button on the start screen.
 
 ## More
 
 - [For grown-ups](docs/grown-ups.md): the settings, seasonal themes, and recording your own voice.
-- [The den](docs/den.md): what children can do there, the rules it follows, and the backlog.
+- [The hero's house](docs/den.md): what children can do there, what is traced, the rules it follows, and the backlog.
 - [Developing](docs/developing.md): running it on your computer, how the code is laid out, testing and code quality.
 
 ## Credits

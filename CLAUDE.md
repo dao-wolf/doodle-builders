@@ -12,7 +12,7 @@ A static HTML, canvas and JavaScript learning game for children aged 2 to 5 (pho
 
 ## How the code is built (easy to break)
 
-- **No build step, no modules.** Plain `<script>` files share one global scope, and the load order at the bottom of `index.html` matters: `util, learning, calendar, content, settings, seasons, art, audio, voice, game, render, den, studio, main`. A top-level `const` used before its file loads throws. Switching to native ES modules is the next planned change.
+- **No build step, no modules.** Plain `<script>` files share one global scope, and the load order at the bottom of `index.html` matters: `util, learning, trace, calendar, content, settings, seasons, art, audio, voice, game, render, den, studio, main`. A top-level `const` used before its file loads throws. Switching to native ES modules is the next planned change.
 - Question and curriculum rules live in `js/learning.js`, which never touches the page; `game.js` only shows them.
 - **Game flow** is a phase state machine in `js/game.js`: `menu → intro → walk → ask → reward → … → arrive → bask → carry → place → building → done`. Use `later()` for delayed game steps, not `setTimeout`: restarting a level bumps `gen`, which cancels them.
 - **Coordinates** are logical units scaled by `SC`. The hero, Nibblers and decorations are in world x (subtract `camX` to draw); question blocks, gems, particles and flying pieces are in screen coordinates.

@@ -22,6 +22,7 @@ index.html            the page: HUD, buttons, menus, settings and voice studio
 css/style.css         all styles
 js/util.js            canvas setup, constants, helpers
 js/learning.js        the learning rules: graphemes, weeks, and what to ask (no page access; see docs/domain.md)
+js/trace.js           the tracing rules: letter and number shapes, judging a trace, the snack bar (no page access; see docs/domain.md and docs/den.md)
 js/content.js         spoken lines, number words, the four outposts and their lands
 js/settings.js        grown-up settings (saved in localStorage)
 js/calendar.js        when each season shows, including Easter's moving window (no page access; unit tests in tests/)
@@ -31,17 +32,18 @@ js/audio.js           sound effects and music (Web Audio, no files)
 js/voice.js           speech: own recordings, then Jenny, then the device voice (letter sounds: own recordings only)
 js/game.js            game rules: journey, questions, Nibblers, building, input, update loop
 js/render.js          drawing the world and the menu previews
+js/den.js             the hero's house (the code calls it the den): tracing to feed the hero, and dressing up (see docs/den.md)
 js/studio.js          the voice studio (record, trim, save, export and import)
 js/main.js            main loop and start-up
 voice/jenny.json      the built-in voice (Jenny (Dioco), made with Piper), one base64 MP3 per clip
 voice/my-voice.json   your voice pack, if you add one (optional)
 tools/voice/          scripts that made jenny.json (see tools/voice/README.md)
-tests/                unit tests for js/learning.js and js/calendar.js, run in Node
+tests/                unit and acceptance tests for js/learning.js, js/trace.js and js/calendar.js, run in Node
 tools/playtest/       automated playthrough, voice studio, zero-size and performance tests
 docs/                 these guides, the README screenshot and the seasonal screenshots
 ```
 
-The scripts load in this order at the bottom of `index.html`, and they share one global scope, so the order matters: `util, learning, calendar, content, settings, seasons, art, audio, voice, game, render, den, studio, main`.
+The scripts load in this order at the bottom of `index.html`, and they share one global scope, so the order matters: `util, learning, trace, calendar, content, settings, seasons, art, audio, voice, game, render, den, studio, main`.
 
 ## The `TEXT` and `LEVELS` registries
 
@@ -56,7 +58,7 @@ Each hero is drawn in code, with no image files. Everything that differs between
 | Where | What to add |
 |---|---|
 | `js/art.js` | a `drawX(b, time, o)` function, facing right, and any costumes in `COSTUMES` (drawn by `wear()`, one set per season) |
-| `js/den.js` | its height and mouth in `DEN_HEIGHT` and `DEN_MOUTH`, so the den scales it and feeds it |
+| `js/den.js` | its height and mouth in `DEN_HEIGHT` and `DEN_MOUTH`, so the house scales it and feeds it |
 | `js/render.js` | `LOOKS`: the drawing, its shadow and its poses; `CARD_POSE`: how it sits on its start-screen card |
 | `js/game.js` | `HEROES`: its name, action button, how close Nibblers get, footstep sound, tap area and action (`charge`, then `blow`) |
 | `js/audio.js` | any new sounds in `SFX` |
@@ -74,13 +76,13 @@ Draw from photos of the original drawing or model, but keep the photos out of th
 
 ### Unit tests
 
-The learning rules in `js/learning.js` and the season dates in `js/calendar.js` have unit tests in `tests/`, written in the words in [The learning domain](domain.md). They need Node 22 or later and nothing else:
+The learning rules in `js/learning.js`, the tracing rules in `js/trace.js` and the season dates in `js/calendar.js` have unit tests in `tests/`, written in the words in [The learning domain](domain.md). They need Node 22 or later and nothing else:
 
 ```bash
 node --test "tests/**/*.test.js"
 ```
 
-`tests/acceptance/` says what the questions must do, from the outside; `tests/unit/` tests each rule on its own. Write the test before the change (see [Changing a rule](domain.md#changing-a-rule)).
+`tests/acceptance/` says what the questions must do, and what a child's visit to the hero's house must do, from the outside; `tests/unit/` tests each rule on its own. Write the test before the change (see [Changing a rule](domain.md#changing-a-rule)).
 
 ### Playtests
 
@@ -95,8 +97,8 @@ python tools/playtest/touch_test.py            # plays by touch alone: every con
 python tools/playtest/zoom_test.py             # nothing on any screen lets a double tap or a pinch zoom the page
 python tools/playtest/season_test.py           # the start screen's picture button: switched off stays off in the level, and a double tap counts once
 python tools/playtest/gate_test.py             # the grown-ups check before the settings: children can't get in, grown-ups can
-python tools/playtest/den_test.py              # the den, by touch: tap, feed, play ball, dress up and Lava's colours, remembered and shown in the level
-python tools/playtest/perf_test.py             # performance guard: frame rate, canvas size, music and hidden-page sound
+python tools/playtest/den_test.py              # the hero's house, by finger: a right trace feeds the hero and fills the snack bar, off the path loses nothing, three snacks bring the dance, dress up and Lava's colours, remembered and shown in the level
+python tools/playtest/perf_test.py             # performance guard: frame rate and canvas size (in a level and in the hero's house), music and hidden-page sound
 python tools/playtest/silence_test.py          # the tools themselves: every engine is silent (not one of the ten, and not run on GitHub Actions yet)
 ```
 

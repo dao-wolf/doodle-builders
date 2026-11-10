@@ -312,6 +312,20 @@ describe('Going off the path loses nothing', () => {
     assert.equal(t.progress[0], 0, 'moving along the path from the middle gave progress');
   });
 
+  it('counts nothing from a finger that landed away from the start dot, even if it then slides onto the path and along it', () => {
+    let t = T.newTrace(shape);
+    t = T.traceDown(t, at(0.5));
+    assert.equal(t.event, 'off');
+    t = T.traceMove(t, at(0)); // slides back to the start dot
+    for (let i = 1; i <= 50; i++) t = T.traceMove(t, at(i * 0.02)); // and traces the whole path
+    t = T.traceUp(t);
+    assert.equal(T.traceDone(t), false, 'a finger that landed off the path fed the hero by wandering onto it');
+    assert.equal(t.progress[0], 0, 'a finger that landed off the path made progress');
+    t = T.traceDown(t, at(0)); // lifting and trying again from the start dot works
+    for (let i = 1; i <= 50; i++) t = T.traceMove(t, at(i * 0.02));
+    assert.equal(T.traceDone(T.traceUp(t)), true, 'a fresh touch on the start dot should trace the whole path');
+  });
+
   it('never goes backwards or loses a finished stroke', () => {
     const x = shapeOf(letter('x'));
     let t = T.newTrace(x);
