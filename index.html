@@ -79,7 +79,7 @@
   <div class="panel">
     <h2>Pick an outpost</h2>
     <div class="lvls" id="lvlGrid"></div>
-    <div class="btnrow"><button id="lvlBack" class="smallbtn">Back</button><button id="denBtn" class="smallbtn" aria-label="Visit your hero's den"><svg viewBox="0 0 16 16" width="20" height="20" aria-hidden="true" shape-rendering="crispEdges"><g fill="#e2456a"><rect x="2" y="3" width="4" height="2"/><rect x="10" y="3" width="4" height="2"/><rect x="1" y="5" width="14" height="4"/><rect x="2" y="9" width="12" height="2"/><rect x="4" y="11" width="8" height="2"/><rect x="6" y="13" width="4" height="1"/></g></svg> Den</button><span class="diffchip" id="diffChip"></span></div>
+    <div class="btnrow"><button id="lvlBack" class="smallbtn">Back</button><button id="denBtn" class="smallbtn housebtn" aria-label="Visit your hero's house"><svg viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges"><g fill="#2b2140"><rect x="7" y="0" width="2" height="1"/><rect x="6" y="1" width="4" height="1"/><rect x="5" y="2" width="6" height="1"/><rect x="4" y="3" width="8" height="1"/><rect x="3" y="4" width="10" height="1"/><rect x="2" y="5" width="12" height="1"/><rect x="1" y="6" width="14" height="1"/><rect x="2" y="7" width="12" height="8"/><rect x="11" y="1" width="3" height="4"/></g><g fill="#e2456a"><rect x="7" y="1" width="2" height="1"/><rect x="6" y="2" width="4" height="1"/><rect x="5" y="3" width="6" height="1"/><rect x="4" y="4" width="8" height="1"/><rect x="3" y="5" width="10" height="1"/><rect x="2" y="6" width="12" height="1"/><rect x="12" y="2" width="1" height="2"/></g><g fill="#fff3c4"><rect x="3" y="7" width="10" height="7"/></g><rect x="7" y="9" width="3" height="5" fill="#8a5a30"/><rect x="4" y="8" width="2" height="2" fill="#7cc8ff"/><rect x="11" y="8" width="1" height="2" fill="#7cc8ff"/><rect x="9" y="11" width="1" height="1" fill="#ffd23f"/></svg></button><span class="diffchip" id="diffChip"></span></div>
   </div>
 </div>
 
@@ -87,9 +87,8 @@
   <button id="denBack" class="big denbtn small" aria-label="Back"><svg width="34" height="34" viewBox="0 0 8 9" aria-hidden="true" shape-rendering="crispEdges"><g fill="#2b2140"><rect x="5" y="1" width="2" height="7"/><rect x="4" y="2" width="1" height="5"/><rect x="3" y="3" width="1" height="3"/><rect x="2" y="4" width="1" height="1"/></g></svg></button>
   <div id="denTray" hidden></div>
   <div id="denTools">
-    <button id="denFeed" class="big denbtn" aria-label="Feed"><svg viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges"><g fill="#2b2140"><rect x="7" y="0" width="2" height="3"/><rect x="9" y="1" width="4" height="2"/><rect x="2" y="3" width="12" height="2"/><rect x="1" y="5" width="14" height="7"/><rect x="2" y="12" width="12" height="2"/><rect x="4" y="14" width="8" height="1"/></g><g fill="#e8322b"><rect x="3" y="4" width="10" height="2"/><rect x="2" y="6" width="12" height="5"/><rect x="3" y="11" width="10" height="2"/></g><rect x="4" y="6" width="2" height="3" fill="#ff8a7a"/><rect x="10" y="1" width="3" height="1" fill="#4fb86a"/></svg></button>
-    <button id="denPlay" class="big denbtn" aria-label="Play ball" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges"><g fill="#2b2140"><rect x="5" y="1" width="6" height="1"/><rect x="3" y="2" width="10" height="1"/><rect x="2" y="3" width="12" height="10"/><rect x="3" y="13" width="10" height="1"/><rect x="5" y="14" width="6" height="1"/></g><g fill="#fff"><rect x="5" y="2" width="6" height="1"/><rect x="3" y="3" width="10" height="10"/><rect x="5" y="13" width="6" height="1"/></g><rect x="3" y="7" width="10" height="2" fill="#e8322b"/><rect x="7" y="2" width="2" height="12" fill="#4dabf7"/></svg></button>
     <button id="denDress" class="big denbtn" aria-label="Dress up" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges"><g fill="#2b2140"><rect x="5" y="2" width="6" height="2"/><rect x="2" y="3" width="3" height="2"/><rect x="11" y="3" width="3" height="2"/><rect x="1" y="5" width="3" height="4"/><rect x="12" y="5" width="3" height="4"/><rect x="4" y="5" width="8" height="10"/></g><g fill="#c98bff"><rect x="5" y="4" width="6" height="10"/><rect x="2" y="5" width="2" height="3"/><rect x="12" y="5" width="2" height="3"/></g><g fill="#fff"><rect x="6" y="7" width="4" height="2"/></g></svg></button>
+    <button id="denNext" class="big denbtn" aria-label="Another letter or number"><svg viewBox="0 0 16 16" aria-hidden="true" shape-rendering="crispEdges"><g fill="#2b2140"><rect x="1" y="3" width="9" height="2"/><rect x="8" y="1" width="2" height="2"/><rect x="10" y="2" width="2" height="2"/><rect x="12" y="3" width="2" height="2"/><rect x="10" y="4" width="2" height="2"/><rect x="8" y="5" width="2" height="2"/><rect x="6" y="11" width="9" height="2"/><rect x="6" y="9" width="2" height="2"/><rect x="4" y="10" width="2" height="2"/><rect x="2" y="11" width="2" height="2"/><rect x="4" y="12" width="2" height="2"/><rect x="6" y="13" width="2" height="2"/></g><g fill="#3cb371"><rect x="2" y="3" width="8" height="2"/><rect x="7" y="11" width="8" height="2"/></g></svg></button>
   </div>
 </div>
 
@@ -232,6 +231,7 @@
 
 <script src="js/util.js"></script>
 <script src="js/learning.js"></script>
+<script src="js/trace.js"></script>
 <script src="js/calendar.js"></script>
 <script src="js/content.js"></script>
 <script src="js/settings.js"></script>
