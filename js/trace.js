@@ -23,36 +23,36 @@ const KEEP_RECENT_ITEMS = 3; // an item isn't asked again within this many of it
 // left to right, y goes down, the top of a short letter is 0 and its bottom (the line it sits on) is 1; tall letters reach up
 // to -0.8 and letters with a tail down to 1.6. Each stroke is one touch, then the finger lifts.
 // An angle of 0 points right and 90 points down, so a bigger angle turns clockwise: round letters turn the other way.
-const arc = (cx, cy, rx, ry, from, to) => {
+const arc = ([cx, cy], [rx, ry], from, to) => { // an ellipse's centre and radii, and the angles it runs between
   const n = Math.max(2, Math.ceil(Math.abs(to - from) / 8));
   return Array.from({ length: n + 1 }, (_, i) => { const a = (from + (to - from) * i / n) * Math.PI / 180; return [cx + rx * Math.cos(a), cy + ry * Math.sin(a)]; });
 };
 const line = (...pts) => pts;
 const curve = (a, c, b) => Array.from({ length: 13 }, (_, i) => { const t = i / 12, u = 1 - t; return [u * u * a[0] + 2 * u * t * c[0] + t * t * b[0], u * u * a[1] + 2 * u * t * c[1] + t * t * b[1]]; });
-const bowl = (from, to) => arc(0.45, 0.5, 0.45, 0.5, from, to);           // the round part of a, d, g, o and c
-const archOf = (cx, rx) => arc(cx, 0.5, rx, 0.5, 180, 360);                  // the hump of n, m and h
+const bowl = (from, to) => arc([0.45, 0.5], [0.45, 0.5], from, to);           // the round part of a, d, g, o and c
+const archOf = (cx, rx) => arc([cx, 0.5], [rx, 0.5], 180, 360);                  // the hump of n, m and h
 const DOT = [0.5, -0.45];
 const LETTER_STROKES = {
   a: { strokes: [bowl(-45, -405), line([0.9, 0], [0.9, 1])] },
-  b: { strokes: [line([0.1, -0.8], [0.1, 1]), arc(0.5, 0.5, 0.4, 0.5, 180, 540)] },
+  b: { strokes: [line([0.1, -0.8], [0.1, 1]), arc([0.5, 0.5], [0.4, 0.5], 180, 540)] },
   c: { strokes: [bowl(-40, -320)] },
   d: { strokes: [bowl(-45, -405), line([0.9, -0.8], [0.9, 1])] },
-  e: { strokes: [[...line([0, 0.5], [0.9, 0.5]), ...arc(0.45, 0.5, 0.45, 0.5, 0, -320)]] },
-  f: { strokes: [[...arc(0.6, -0.4, 0.3, 0.3, -15, -180), ...line([0.3, 1])], line([0, 0], [0.65, 0])] },
-  g: { strokes: [bowl(-45, -405), [...line([0.9, 0], [0.9, 1.05]), ...arc(0.45, 1.05, 0.45, 0.45, 0, 150)]] },
+  e: { strokes: [[...line([0, 0.5], [0.9, 0.5]), ...arc([0.45, 0.5], [0.45, 0.5], 0, -320)]] },
+  f: { strokes: [[...arc([0.6, -0.4], [0.3, 0.3], -15, -180), ...line([0.3, 1])], line([0, 0], [0.65, 0])] },
+  g: { strokes: [bowl(-45, -405), [...line([0.9, 0], [0.9, 1.05]), ...arc([0.45, 1.05], [0.45, 0.45], 0, 150)]] },
   h: { strokes: [line([0.1, -0.8], [0.1, 1]), [...archOf(0.475, 0.375), ...line([0.85, 1])]] },
   i: { strokes: [line([0.5, 0], [0.5, 1])], dots: [DOT] },
-  j: { strokes: [[...line([0.5, 0], [0.5, 1.15]), ...arc(0.1, 1.15, 0.4, 0.4, 0, 110)]], dots: [DOT] },
+  j: { strokes: [[...line([0.5, 0], [0.5, 1.15]), ...arc([0.1, 1.15], [0.4, 0.4], 0, 110)]], dots: [DOT] },
   k: { strokes: [line([0.1, -0.8], [0.1, 1]), line([0.85, 0], [0.1, 0.65]), line([0.4, 0.4], [0.9, 1])] },
   l: { strokes: [line([0.5, -0.8], [0.5, 1])] },
   m: { strokes: [line([0.1, 0], [0.1, 1]), [...archOf(0.4, 0.3), ...line([0.7, 1])], [...archOf(1.0, 0.3), ...line([1.3, 1])]] },
   n: { strokes: [line([0.1, 0], [0.1, 1]), [...archOf(0.475, 0.375), ...line([0.85, 1])]] },
   o: { strokes: [bowl(-45, -405)] },
-  p: { strokes: [line([0.1, 0], [0.1, 1.6]), arc(0.5, 0.5, 0.4, 0.5, 180, 540)] },
-  r: { strokes: [line([0.1, 0], [0.1, 1]), arc(0.5, 0.5, 0.4, 0.5, 180, 285)] },
-  s: { strokes: [[...arc(0.5, 0.25, 0.38, 0.25, -35, -270), ...arc(0.5, 0.75, 0.42, 0.25, -90, 145)]] },
-  t: { strokes: [[...line([0.35, -0.45], [0.35, 0.7]), ...arc(0.7, 0.7, 0.35, 0.3, 180, 50)], line([0, 0.05], [0.7, 0.05])] },
-  u: { strokes: [[...line([0.1, 0], [0.1, 0.5]), ...arc(0.475, 0.5, 0.375, 0.5, 180, 0), ...line([0.85, 0])], line([0.85, 0], [0.85, 1])] },
+  p: { strokes: [line([0.1, 0], [0.1, 1.6]), arc([0.5, 0.5], [0.4, 0.5], 180, 540)] },
+  r: { strokes: [line([0.1, 0], [0.1, 1]), arc([0.5, 0.5], [0.4, 0.5], 180, 285)] },
+  s: { strokes: [[...arc([0.5, 0.25], [0.38, 0.25], -35, -270), ...arc([0.5, 0.75], [0.42, 0.25], -90, 145)]] },
+  t: { strokes: [[...line([0.35, -0.45], [0.35, 0.7]), ...arc([0.7, 0.7], [0.35, 0.3], 180, 50)], line([0, 0.05], [0.7, 0.05])] },
+  u: { strokes: [[...line([0.1, 0], [0.1, 0.5]), ...arc([0.475, 0.5], [0.375, 0.5], 180, 0), ...line([0.85, 0])], line([0.85, 0], [0.85, 1])] },
   v: { strokes: [line([0, 0], [0.5, 1], [1, 0])] },
   w: { strokes: [line([0, 0], [0.25, 1], [0.5, 0.35], [0.75, 1], [1, 0])] },
   x: { strokes: [line([0, 0], [1, 1]), line([1, 0], [0, 1])] },
@@ -61,26 +61,30 @@ const LETTER_STROKES = {
 };
 const NUMBER_STROKES = {
   1: { strokes: [line([0, 0.3], [0.35, 0], [0.35, 1])] },
-  2: { strokes: [[...arc(0.35, 0.3, 0.3, 0.3, 180, 400), ...line([0, 1], [0.7, 1])]] },
-  3: { strokes: [[...arc(0.33, 0.25, 0.28, 0.25, -160, 90), ...arc(0.33, 0.75, 0.33, 0.25, -90, 160)]] },
+  2: { strokes: [[...arc([0.35, 0.3], [0.3, 0.3], 180, 400), ...line([0, 1], [0.7, 1])]] },
+  3: { strokes: [[...arc([0.33, 0.25], [0.28, 0.25], -160, 90), ...arc([0.33, 0.75], [0.33, 0.25], -90, 160)]] },
   4: { strokes: [line([0.55, 0], [0, 0.7], [0.75, 0.7]), line([0.55, 0], [0.55, 1])] },
-  5: { strokes: [[...line([0.62, 0], [0.12, 0], [0.05, 0.48]), ...arc(0.33, 0.68, 0.33, 0.32, -145, 150)]] },
-  6: { strokes: [[...curve([0.6, 0], [0.05, 0.15], [0.02, 0.68]), ...arc(0.35, 0.68, 0.33, 0.32, 180, -180)]] },
+  5: { strokes: [[...line([0.62, 0], [0.12, 0], [0.05, 0.48]), ...arc([0.33, 0.68], [0.33, 0.32], -145, 150)]] },
+  6: { strokes: [[...curve([0.6, 0], [0.05, 0.15], [0.02, 0.68]), ...arc([0.35, 0.68], [0.33, 0.32], 180, -180)]] },
   7: { strokes: [line([0, 0], [0.65, 0], [0.25, 1])] },
-  8: { strokes: [[...arc(0.35, 0.25, 0.27, 0.25, -90, -270), ...arc(0.35, 0.75, 0.33, 0.25, -90, 270), ...arc(0.35, 0.25, 0.27, 0.25, 90, -90)]] },
-  9: { strokes: [[...arc(0.35, 0.3, 0.33, 0.3, 0, -360), ...curve([0.68, 0.3], [0.7, 0.85], [0.3, 1])]] },
-  0: { strokes: [arc(0.35, 0.5, 0.33, 0.5, -90, -450)] },
+  8: { strokes: [[...arc([0.35, 0.25], [0.27, 0.25], -90, -270), ...arc([0.35, 0.75], [0.33, 0.25], -90, 270), ...arc([0.35, 0.25], [0.27, 0.25], 90, -90)]] },
+  9: { strokes: [[...arc([0.35, 0.3], [0.33, 0.3], 0, -360), ...curve([0.68, 0.3], [0.7, 0.85], [0.3, 1])]] },
+  0: { strokes: [arc([0.35, 0.5], [0.33, 0.5], -90, -450)] },
 };
 const TEN_GAP = 0.55; // how far right the 0 of 10 starts, from the left of the 1
 
 // The drawing of an item before it is scaled: { strokes: [points], dots: [points] }, or null for anything that can't be traced
-function rawShape(item) {
-  if (item && item.kind === 'letter') return traceLearning.G[item.id] && LETTER_STROKES[item.id] ? { dots: [], ...LETTER_STROKES[item.id] } : null;
-  if (!item || item.kind !== 'number') return null;
-  if (item.n >= 1 && item.n <= 9) return { dots: [], ...NUMBER_STROKES[item.n] };
-  if (item.n !== 10) return null;
+const rawLetter = id => traceLearning.G[id] && LETTER_STROKES[id] ? { dots: [], ...LETTER_STROKES[id] } : null;
+const rawTen = () => { // a 1, then a 0 a little to the right
   const zero = NUMBER_STROKES[0].strokes.map(s => s.map(([x, y]) => [x + TEN_GAP, y]));
   return { dots: [], strokes: [...NUMBER_STROKES[1].strokes, ...zero] };
+};
+function rawShape(item) {
+  if (!item) return null;
+  if (item.kind === 'letter') return rawLetter(item.id);
+  if (item.kind !== 'number') return null;
+  if (item.n === 10) return rawTen();
+  return item.n >= 1 && item.n <= 9 ? { dots: [], ...NUMBER_STROKES[item.n] } : null;
 }
 // Points spaced `step` apart along the given points, ending exactly on the last one
 function resample(pts, step) {

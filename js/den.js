@@ -265,13 +265,14 @@ cv.addEventListener('pointerdown', ev => { // tap the hero to pet them; anywhere
   try { cv.setPointerCapture(ev.pointerId); } catch (e) { /* the pointer has gone already */ }
   applyTrace(traceDown({ ...den.trace, tol: traceTolerance() }, spotShape(at)), at);
 });
+const fingerDown = ev => den.on && ev.pointerId === den.pointer; // the finger that is tracing
 cv.addEventListener('pointermove', ev => {
-  if (!den.on || ev.pointerId !== den.pointer || den.phase !== 'trace') return;
+  if (!fingerDown(ev) || den.phase !== 'trace') return;
   const at = worldPoint(ev);
   applyTrace(traceMove(den.trace, spotShape(at)), at);
 });
 const liftFinger = ev => { // a lift keeps what was traced, and the next touch can carry on or start again
-  if (!den.on || ev.pointerId !== den.pointer) return;
+  if (!fingerDown(ev)) return;
   den.pointer = null; den.finger = null;
   if (den.phase === 'trace') den.trace = traceUp(den.trace);
 };
