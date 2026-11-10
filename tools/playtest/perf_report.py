@@ -32,7 +32,7 @@ class Chromium:
         return [(name, {'viewport': {'width': w, 'height': h}, 'device_scale_factor': dsf, 'has_touch': True})
                 for name, w, h, dsf in [('phone', 390, 844, 3), ('tablet', 1024, 1366, 2)]]
 
-    async def launch(self): return await self.p.chromium.launch(args=['--autoplay-policy=no-user-gesture-required'])
+    async def launch(self): return await localsite.launch(self.p, '--autoplay-policy=no-user-gesture-required', engine='chromium')
 
     async def watch(self, page):
         self.cdp = await page.context.new_cdp_session(page); await self.cdp.send('Performance.enable')
@@ -50,7 +50,7 @@ class WebKit:
 
     def devices(self): return [(name, self.p.devices[name]) for name in ('iPhone 15', 'iPad Pro 11')]
 
-    async def launch(self): return await self.p.webkit.launch()
+    async def launch(self): return await localsite.launch(self.p, engine='webkit')
 
     async def watch(self, page): pass
 

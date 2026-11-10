@@ -18,7 +18,7 @@ async def main():
     os.makedirs(OUT, exist_ok=True)
     srv = localsite.serve(PORT)
     async with async_playwright() as p:
-        browser = await p.chromium.launch()
+        browser = await localsite.launch(p, engine='chromium')
         page = await browser.new_page(viewport={'width': 0, 'height': 0}); errors = []
         localsite.watch(page, errors, PORT, 'zero-size')
         await page.goto(f'{localsite.address(PORT)}index.html'); await page.wait_for_timeout(800)

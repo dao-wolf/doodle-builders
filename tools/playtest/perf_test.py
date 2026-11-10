@@ -55,7 +55,7 @@ async def main():
     os.makedirs(OUT, exist_ok=True)
     srv = localsite.serve(PORT)
     async with async_playwright() as p:
-        browser = await p.chromium.launch(args=['--autoplay-policy=no-user-gesture-required'])
+        browser = await localsite.launch(p, '--autoplay-policy=no-user-gesture-required', engine='chromium')
         page = await browser.new_page(viewport={'width': 1024, 'height': 1366}, device_scale_factor=2, has_touch=True)
         errors = []; localsite.watch(page, errors, PORT, 'perf')
         await start(page)

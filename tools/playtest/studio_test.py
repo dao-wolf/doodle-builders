@@ -29,8 +29,8 @@ async def main(mic_wav):
     srv = localsite.serve(PORT)
     ok = True
     async with async_playwright() as p:
-        browser = await p.chromium.launch(args=['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream',
-                                                f'--use-file-for-fake-audio-capture={mic_wav}', '--autoplay-policy=no-user-gesture-required'])
+        browser = await localsite.launch(p, '--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream',
+                                         f'--use-file-for-fake-audio-capture={mic_wav}', '--autoplay-policy=no-user-gesture-required', engine='chromium')
         ctx = await browser.new_context(viewport={'width': 1000, 'height': 800}, accept_downloads=True)
         page = await ctx.new_page(); errors = []; localsite.watch(page, errors, PORT, 'studio')
         await page.goto(f'{localsite.address(PORT)}index.html'); await page.wait_for_timeout(600)
